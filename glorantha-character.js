@@ -1,0 +1,1449 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright © 2019 Vivek Das Mohapatra <vivek@etla.org>
+const maths = Math;
+
+var suppressed_keys =
+    {
+        'text': [],
+        'uint': [],
+        'dice': [],
+    };
+
+var allowed_keys =
+    {
+        'uint': [],
+        'dice': [],
+    };
+
+
+const rune_glyph = { darkness:  '●',
+                     water:     '♒' , // ꤾ  𐦊
+                     earth:     '□',
+                     air:       'ᘎ', // ᠖
+                     fire:      '☉',
+                     sky:       '☉',
+                     'fire/sky':'⦿',
+                     moon:      'ⵀ', // UP AND RIGHT
+                     chaos:     '☣',
+                     movement:  '𐤸',
+                     stasis:    '⌓',
+                     truth:     '𝗬',
+                     illusion:  '⛬',
+                     fertility: 'ⴵ', // ⧖
+                     death:     '✝',
+                     harmony:   '𝍫',
+                     disorder:  '𖥱',
+                     man:       '𐀼̯', // ⟟̵̭ ⫯̵̯
+                     beast:     '▽',
+                     plant:     '𐙋' }; // ᪴
+
+const attr_map = { 'stats.con':  [ calc_max_hp, calc_healrate, calc_enc    ] ,
+                   'stats.siz':  [ calc_max_hp, calc_damage,   calc_siz_sr ] ,
+                   'stats.pow':  [ calc_max_hp, calc_mp,       calc_sp_dam ] ,
+                   'stats.cha':  [ calc_sp_dam ] ,
+                   'stats.str':  [ calc_damage, calc_enc ] ,
+                   'stats.dex':  [ calc_dex_sr ] ,
+                   'derived.hp':          [ update_hitpoints ] ,
+                   'hitpoints.head.cur':  [ update_hitpoints ] ,
+                   'hitpoints.chest.cur': [ update_hitpoints ] ,
+                   'hitpoints.armr.cur':  [ update_hitpoints ] ,
+                   'hitpoints.arml.cur':  [ update_hitpoints ] ,
+                   'hitpoints.body.cur':  [ update_hitpoints ] ,
+                   'hitpoints.legl.cur':  [ update_hitpoints ] ,
+                   'hitpoints.legr.cur':  [ update_hitpoints ] };
+var groups =
+[
+    { group: 'stats',
+      label: 'Characteristics',
+      draw: true,
+      items: [ { key: 'str', type: 'attr', label: 'Strength',     val: 3 } ,
+               { key: 'con', type: 'attr', label: 'Constitution', val: 3 } ,
+               { key: 'cha', type: 'attr', label: 'Charisma',     val: 3 } ,
+               { key: 'siz', type: 'attr', label: 'Size',         val: 7 } ,
+               { key: 'int', type: 'attr', label: 'Intelligence', val: 7 } ,
+               { key: 'pow', type: 'attr', label: 'Power',        val: 3 } ,
+               { key: 'dex', type: 'attr', label: 'Dexterity',    val: 3 } ] },
+    { group: 'derived',
+      label: 'Derived Scores',
+      draw: true,
+      items: [ { key: 'srs', type: 'attr', label: 'SR Size',       val: 0  , noroll: 1, noedit: 1 } ,
+               { key: 'srd', type: 'attr', label: 'SR Dex',        val: 0  , noroll: 1, noedit: 1 } ,
+               { key: 'spd', type: 'dice', label: 'Spirit Damage', val: '1d3',          noedit: 1 } ,
+               { key: 'dam', type: 'dice', label: 'Damage Bonus',  val: 0  ,            noedit: 1 } ,
+               { key: 'mp' , type: 'attr', label: 'Magic Points',  val: 0  , noroll: 1, noedit: 1 } ,
+               { key: 'hp' , type: 'attr', label: 'Hitpoints',     val: 0  , noroll: 1, noedit: 1 } ,
+               { key: 'hlr', type: 'attr', label: 'Healing Rate',  val: 1  , noroll: 1, noedit: 1 } ,
+               { key: 'enc', type: 'attr', label: 'Encumbrance',   val: 9  , noroll: 1, noedit: 1 } ] },
+    { group: 'hitpoints',
+      draw: false,
+      items: [ { key: 'head.cur', type: 'attr',  val: 0 } ,
+               { key: 'armr.cur', type: 'attr',  val: 0 } ,
+               { key: 'chest.cur', type: 'attr', val: 0 } ,
+               { key: 'body.cur', type: 'attr',  val: 0 } ,
+               { key: 'arml.cur', type: 'attr',  val: 0 } ,
+               { key: 'legr.cur', type: 'attr',  val: 0 } ,
+               { key: 'legl.cur', type: 'attr',  val: 0 } ] },
+    { group: 'rune',
+      label: 'Runes',
+      draw: true,
+      items: [ { key: 'darkness', type: 'rune', val: 0  } ,
+               { key: 'water'   , type: 'rune', val: 0  } ,
+               { key: 'earth'   , type: 'rune', val: 0  } ,
+               { key: 'air'     , type: 'rune', val: 0  } ,
+               { key: 'fire/sky', type: 'rune', val: 0  } ,
+               { key: 'moon'    , type: 'rune', val: 0  } ,
+               { key: 'chaos'   , type: 'rune', val: 0  } ] },
+    { group: 'prune',
+      label: 'Power Runes',
+      draw: true,
+      items: [ { key: 'velocity'   , type: 'prune', subkeys: [ 'stasis'   , 'movement' ], val: 50 } ,
+               { key: 'veracity'   , type: 'prune', subkeys: [ 'truth'    , 'illusion' ], val: 50 } ,
+               { key: 'vitality'   , type: 'prune', subkeys: [ 'fertility', 'death'    ], val: 50 } ,
+               { key: 'vicissitude', type: 'prune', subkeys: [ 'harmony'  , 'disorder' ], val: 50 } ,
+               { key: 'viricity'   , type: 'prune', subkeys: [ 'man'      , 'beast'    ], val: 50 } ] },
+    { group: 'emo',
+      label: 'Passions',
+      draw: true,
+      items: [ { key: 0, type: 'emotion', subtype: 'hate',    target: 'Authority',    val: 60 } ,
+               { key: 1, type: 'emotion', subtype: 'hate',    target: 'Wolf Pirates', val: 60 } ,
+               { key: 2, type: 'emotion', subtype: 'love',    target: 'Family',       val: 60 } ,
+               { key: 3, type: 'emotion', subtype: 'loyalty', target: 'Nochet',       val: 60 } ,
+               { key: 4, type: 'emotion', subtype: 'loyalty', target: 'Argrath',      val: 60 } ,
+               { key: 5, type: 'emotion', subtype: 'loyalty', target: 'Holy Country', val: 60 } ,
+               { key: 6, type: 'emotion', subtype: 'loyalty', target: 'Clan',         val: 60 } ] },
+    { group: 'agility',
+      label: 'Agility',
+      draw: true,
+      bonus: 0,
+      modifier: { primary: ['dex'], secondary: ['str','pow'], penalty: ['siz'] },
+      items: [ { key: 'boat',  type: 'stat', val: 5  } ,
+               { key: 'climb', type: 'stat', val: 60 } ,
+               { key: 'dodge', type: 'stat', val: 68 } ,
+               { key: 'drive', type: 'stat', val: 5  } ,
+               { key: 'jump',  type: 'stat', val: 57 } ,
+               { key: 'ride',  type: 'stat', val: 15 } ,
+               { key: 'swim',  type: 'stat', val: 15 } ] },
+    { group: 'magic',
+      label: 'Magic',
+      draw: true,
+      bonus: 0,
+      modifier: { primary: ['pow'], secondary: ['cha'] },
+      items: [ { key: 'meditate',       type: 'stat', label: "Meditate",       val: 5  } ,
+               { key: 'prepare-corpse', type: 'stat', label: "Prepare Corpse", val: 10 } ,
+               { key: 'spirit-combat',  type: 'stat', label: "Spirit Combat",  val: 35 } ,
+               { key: 'spirit-travel',  type: 'stat', label: "Spirit Travel",  val: 10 } ,
+               { key: 'worship-eurmal', type: 'stat', label: "Worship Eurmal", val: 20 } ] },
+    { group: 'communication',
+      label: 'Communication',
+      draw: true,
+      bonus: 0,
+      modifier: { primary: ['cha'], secondary: ['int','pow'], penalty: [] },
+      items: [ { key: 'act',             type: 'stat', label: "Act",                 val: 5  } ,
+               { key: 'art',             type: 'stat', label: "Art",                 val: 5  } ,
+               { key: 'bargain',         type: 'stat', label: "Bargain",             val: 20 } ,
+               { key: 'charm',           type: 'stat', label: "Charm",               val: 50 } ,
+               { key: 'dance',           type: 'stat', label: "Dance",               val: 20 },
+               { key: 'disguise',        type: 'stat', label: "Disguise",            val: 35 },
+               { key: 'fasttalk',        type: 'stat', label: "Fast Talk",           val: 95 },
+               { key: 'intimidate',      type: 'stat', label: "Intimidate",          val: 15 },
+               { key: 'intrigue',        type: 'stat', label: "Intrigue",            val: 10 },
+               { key: 'orate',           type: 'stat', label: "Orate",               val: 10 },
+               { key: 'sing',            type: 'stat', label: "Sing",                val: 15 },
+               { key: 'speak.tradetalk', type: 'stat', label: "Speak Tradetalk",     val: 10 } ,
+               { key: 'speak.own',       type: 'stat', label: "Speak Own (Esrolian)", val: 50 } ] },
+    { group: 'knowledge',
+      label: 'Knowledge',
+      draw: true,
+      bonus: 0,
+      modifier: { primary: ['int'], secondary: ['pow'] },
+      items: [ { key: 'battle',           type: 'stat', label: "Battle",             val: 30 } ,
+               { key: 'celestial',        type: 'stat', label: "Celestial Lore",     val: 5  } ,
+               { key: 'cult-lore.eurmal', type: 'stat', label: "Cult Lore (Eurmal)", val: 20 } ,
+               { key: 'customs.esrolian', type: 'stat', label: "Customs (Esrolian)", val: 50 } ,
+               { key: 'elder-race-lore',  type: 'stat', label: "Elder Race Lore",    val: 5  } ,
+               { key: 'evaluate',         type: 'stat', label: "Evaluate",           val: 10 } ,
+               { key: 'farm',             type: 'stat', label: "Farm",               val: 35 } ,
+               { key: 'first-aid',        type: 'stat', label: "First Aid",          val: 15 } ,
+               { key: 'game',             type: 'stat', label: "Game",               val: 15 } ,
+               { key: 'herd',             type: 'stat', label: "Herd",               val: 5  } ,
+               { key: 'homeland-lore',    type: 'stat', label: "Homeland Lore",      val: 30 } ,
+               { key: 'manage-household', type: 'stat', label: "Manage Household",   val: 10 } ,
+               { key: 'mineral-lore',     type: 'stat', label: "Mineral Lore",       val: 5  } ,
+               { key: 'peaceful-cut',     type: 'stat', label: "Peaceful Cut",       val: 10 } ,
+               { key: 'plant-lore',       type: 'stat', label: "Plant Lore",         val: 5  } ,
+               { key: 'survival',         type: 'stat', label: "Survival",           val: 15 } ,
+               { key: 'treat-disease',    type: 'stat', label: "Treat Disease",      val: 5  } ,
+               { key: 'treat-poison',     type: 'stat', label: "Treat Poison",       val: 5  } ] },
+    { group: 'manipulation',
+      label: 'Manipulation',
+      draw: true,
+      bonus: 0,
+      modifier: { primary: ['dex','int'], secondary: ['str','pow'] },
+      items: [ { key: 'conceal',         type: 'stat', label: "Conceal",         val: 5  } ,
+               { key: 'craft',           type: 'stat', label: "Craft",           val: 10 } ,
+               { key: 'devise',          type: 'stat', label: "Devise",          val: 15 } ,
+               { key: 'play-instrument', type: 'stat', label: "Play Instrument", val: 5  } ,
+               { key: 'sleight',         type: 'stat', label: "Sleight",         val: 35 } ] },
+    { group: 'perception',
+      label: 'Perception',
+      draw: true,
+      bonus: 0,
+      modifier: { primary: ['int'], secondary: ['pow'] },
+      items: [ { key: 'insight', type: 'stat', label: "Insight (Own Species)", val: 20 } ,
+               { key: 'listen',  type: 'stat', label: "Listen",  val: 35 } ,
+               { key: 'scan',    type: 'stat', label: "Scan",    val: 25 } ,
+               { key: 'search',  type: 'stat', label: "Search",  val: 50 } ,
+               { key: 'track',   type: 'stat', label: "Track",   val: 5  } ] },
+    { group: 'stealth',
+      label: 'Stealth',
+      draw: true,
+      bonus: 0,
+      modifier: { primary: ['dex','int'], secondary: ['pow'], disability: ['siz'] },
+      items: [ { key: 'hide',         type: 'stat', label: "Hide",         val: 45 } ,
+               { key: 'move-quietly', type: 'stat', label: "Move Quietly", val: 65 } ] },
+    { group: 'melee',
+      label: 'Melee Weapons',
+      draw: true,
+      bonus: 0,
+      modifier: { inherit: 'manipulation' },
+      items: [ { key: '1-handed axe',     type: 'stat', label: "Axe (1✋)",        val: 25 } ,
+               { key: '2-handed axe',     type: 'stat', label: "Axe (2✋)",        val:  5 } ,
+               { key: 'broadsword',       type: 'stat', label: "Broadsword",       val: 10 } ,
+               { key: 'dagger',           type: 'stat', label: "Dagger",           val: 15 } ,
+               { key: 'kopis',            type: 'stat', label: "Kopis",            val: 10 } ,
+               { key: '1-handed mace',    type: 'stat', label: "Mace (1✋)",       val: 15 } ,
+               { key: '1-handed spear',   type: 'stat', label: "Spear (2✋)",      val: 15 } ,
+               { key: 'pike',             type: 'stat', label: "Pike",             val: 15 } ,
+               { key: 'rapier',           type: 'stat', label: "Rapier",           val: 55 } ,
+               { key: 'two-handed spear', type: 'stat', label: "Spear (2✋)",      val: 15 } ] },
+    { group: 'missile',
+      label: 'Missile Weapons',
+      draw: true,
+      bonus: 0,
+      modifier: { inherit: 'manipulation' },
+      items: [ { key: 'composite-bow',   type: 'stat', label: "Composite Bow",   val:  5 } ,
+               { key: 'javelin',         type: 'stat', label: "Javelin",         val: 10 } ,
+               { key: 'pole-lasso',      type: 'stat', label: "Pole Lasso",      val:  5 } ,
+               { key: 'self-bow',        type: 'stat', label: "Self Bow",        val: 15 } ,
+               { key: 'sling',           type: 'stat', label: "Sling",           val:  5 } ,
+               { key: 'throwing-dagger', type: 'stat', label: "Throwing Dagger", val:  5 } ,
+               { key: 'thrown-axe',      type: 'stat', label: "Thrown Axe",      val: 20 } ] },
+    { group: 'shield',
+      label: 'Shields',
+      draw: true,
+      bonus: 0,
+      modifier: { inherit: 'manipulation' },
+      items: [ { key: 'large-shield',  type: 'stat', label: "Large Shield",  val: 25 } ,
+               { key: 'medium-shield', type: 'stat', label: "Medium Shield", val: 30 } ,
+               { key: 'small-shield',  type: 'stat', label: "Small Shield",  val: 30 } ] },
+    { group: 'unarmed',
+      label: 'Natural Weapons',
+      draw: true,
+      bonus: 0,
+      modifier: { inherit: 'manipulation' },
+      items: [ { key: 'fist',    type: 'stat', label: "Fist",    val:  5 } ,
+               { key: 'grapple', type: 'stat', label: "Grapple", val: 10 } ,
+               { key: 'kick',    type: 'stat', label: "Kick",    val: 10 } ] },
+];
+
+const ucfre = /\b([a-z])/g;
+function ucfirst (s)
+{
+    return s.replace( ucfre, function (m,c,o,s) { return c.toUpperCase(); } );
+}
+
+function xmatch_token(attr, tok)
+{
+    return "contains(concat(' ', @" + attr + ", ' '), '" + tok + "')";
+}
+
+function xmatch_class(tok)
+{
+    return xmatch_token( 'class', tok );
+}
+
+function xpath (path, context, type)
+{
+    var rtype  = XPathResult[ type || 'ORDERED_NODE_SNAPSHOT_TYPE' ];
+    var ctx    = context || document;
+    var result = document.evaluate( path , ctx, null, rtype, null );
+    return result;
+}
+
+function editclass (node)
+{
+    var nc = ' ' + node.getAttribute('class') + ' ';
+    for( const c of ["text", "uint", "int", "blob", "dice"] )
+        if( nc.indexOf( ' ' + c + ' ') >= 0 )
+            return c;
+
+    return false;
+}
+
+function updateclass (node)
+{
+    var nc = ' ' + node.getAttribute('class') + ' ';
+    for( const c of ['skill', 'attr', 'prune', 'pinfo', 'hit'] )
+        if( nc.indexOf( ' ' + c + ' ') >= 0 )
+            return c;
+
+    return false;
+}
+
+function eventstr (e)
+{
+    var estring = '{ ';
+
+    for( var prop in e )
+        if( prop == 'target' || prop == 'type' )
+            estring += prop + ': ' + e[prop] + ', ';
+
+    estring += 'which' + ': ' + e.which    + ' ';    
+    estring += '} ';
+
+    return estring;
+}
+
+function event_to_char(e)
+{
+    if( !e )
+        return 0;
+
+    // for a key associated with a single glyph, return the character code
+    // othwerwise use the raw event.which value which maps to the key rather
+    // than a character (eg you'd get D instead of d, but it's what we want
+    // for DEL, BS, etc):
+    return ( e.key && e.key.length == 1 ) ? e.key.charCodeAt( 0 ) : e.which;
+}
+
+function suppress_input (e)
+{
+    var ec = editclass( e.target );
+
+    if( !ec )
+        return;
+
+    var key = event_to_char( e );
+
+    //console.log( ec + ':' + key );
+    //console.log( eventstr(e) );
+    
+    if( allowed_keys[ec] )
+        if( !allowed_keys[ec][key] )
+            e.preventDefault();
+
+    if( suppressed_keys[ec] )
+        if( suppressed_keys[ec][key] )
+            e.preventDefault();
+}
+
+function get_group (grp)
+{
+    var id = grp.split('.');
+    grp = id[0];
+    
+    for( const g of groups )
+        if( g.group == grp )
+            return g;
+
+    return null;
+}
+
+function split_id (i)
+{
+    var id   = i.split( '.' );
+    var grp  = id.shift();
+    var name = id.join('.');
+    return [ grp, name ];
+}
+
+function get_entry (ident)
+{
+    var id    = split_id( ident );
+    var group = id[ 0 ];
+    var name  = id[ 1 ];
+    var grp   = get_group( group );
+
+    if( !grp )
+        return null;
+
+    for( const i of grp.items )
+        if( i.key == name )
+            return i;
+
+    return null;
+}
+
+function _update_prune (p,i,val)
+{
+    var update;
+    var node;
+    var other = 100 - val;
+    
+    i = i & 1;
+
+    // paired runes actually only store the value of the
+    // 'primary' (eg statis/motion only stores stasis)
+    // so we have to set the correct value, which will be
+    // be the value the user _didn't_ edit:
+    if( i == 1 )
+        p.val = other;
+    else
+        p.val = val;
+
+    update = p.subkeys[ i ^ 1 ];
+    node = document.getElementById( 'prune.' + update );
+
+    if( node )
+        node.textContent = other;
+
+    var nv = JSON.stringify( p );
+    localStorage.setItem( 'prune.' + p.key, nv );
+
+    return true;
+}
+
+function update_prune (n,v)
+{
+    var tgt = null;
+    var prg = get_group( 'prune' );
+    var pe  = null;
+    
+    if( !prg )
+        return;
+
+    // update the paired rune entry that has 'n' as one
+    // of its member runes:
+    for( pe of prg.items )
+        if( (tgt = pe.subkeys.indexOf( n )) >= 0 )
+            return _update_prune( pe, tgt, v );
+
+    return null;
+}
+
+function update_item (i,v,norecurse)
+{
+    var item = get_entry( i );
+
+    if( item )
+    {
+        if( !item.noedit )
+        {
+            var group = get_group( i );
+            if( !isNaN(v) )
+                item.val = v - (group.bonus ? group.bonus : 0);
+            else
+                item.val = v;
+            var nv = JSON.stringify( item );
+            localStorage.setItem( i, nv );
+        }
+
+        if( norecurse )
+            return;
+
+        // update derived attributes
+        var callbacks = attr_map[ i ];
+        if( callbacks )
+            for( const cb of callbacks )
+                cb();
+
+        // update any skill group modifiers
+        var id = split_id( i );
+        if( id[0] != 'stats' )
+            return;
+
+        var altered = [];
+        var secondary = [];
+        var attr = id[ 1 ];
+
+        // figure out which groups modifiers were altered by this stat
+        for( const g of groups )
+        {
+            if( !g.modifier )
+                continue;
+            // if this stat is mentioned in the group's modifier list
+            for( const x in g.modifier )
+                if( x != 'inherit' )
+                    for( const m of g.modifier[ x ] )
+                        if( m == attr )
+                            altered[ g.group ] = 1;
+        }
+
+        // indirectly modified groups (stat → altered-group → dependent group)
+        for( const g of groups )
+            if( g.modifier         &&
+                g.modifier.inherit &&
+                altered[ g.modifier.inherit ] )
+                secondary[ g.group ] = 1;
+
+        for( const g in altered )
+            refresh_group( get_group(g) );
+        for( const g in secondary )
+            refresh_group( get_group(g) );
+    }
+}
+
+function handle_edit_event (e)
+{
+    var uc = updateclass( this );
+
+    if( !uc )
+        return;
+
+    var name;
+    var id  = this.getAttribute( 'id' );
+    var val = this.textContent;
+
+    if ( !id || ( id == "") )
+        return;
+    
+    switch( uc )
+    {
+      case 'prune':
+          name = split_id( id )[ 1 ];
+          update_prune( name, val * 1 );
+          break;
+          
+      case 'pinfo':
+          localStorage.setItem( id, val );
+          break;
+          
+      case 'skill':
+      case 'attr':
+          update_item( id, val );
+          break;
+          
+      default:
+          return;
+    }
+}
+
+function _make_stat_value(dl, data, bonus, subtype)
+{
+    var dd   = document.createElement( 'dd' );
+    var cssc = (data.noedit ? '' : 'editable ') + subtype + ' ';
+    var id   = dl.getAttribute( 'id' ) + '.' + data.key;
+    var val  = data.val;
+    var sval = document.createElement( 'span' );
+    var sbtn = document.createElement( 'span' );    
+    
+    switch( data.type )
+    {
+        case 'attr':
+        case 'stat':
+        case 'rune':
+        case 'emotion':
+          cssc += 'uint';
+          val *= 1;  
+          break;
+        case 'dice':
+          cssc += 'dice';
+          break;
+        default:
+          cssc += 'text';
+    } 
+
+    if( !isNaN( bonus ) )
+        val += bonus;
+
+    sval.setAttribute( 'id', id );
+    sval.setAttribute( 'class', cssc );
+    sval.textContent = '' + val;
+
+    if( data.noroll )
+    {
+        sbtn.textContent = '   ';
+    }
+    else
+    {
+        sbtn.setAttribute( 'class', 'roll' );
+        if( data.type == 'rune' && rune_glyph[ data.key ] )
+            sbtn.textContent = rune_glyph[ data.key ] + '  ';
+        else
+            sbtn.textContent = "🎲  ";
+    }
+
+    sbtn.style.float = 'left';
+    sbtn.style.width = '2em';
+    
+    dd.appendChild( sbtn );
+    dd.appendChild( sval );
+    dl.appendChild( dd  );
+}
+
+function make_stat_value (dl, data, bonus)
+{
+    _make_stat_value( dl, data, bonus, 'skill' );
+}
+
+function make_attr_value (dl, data, bonus)
+{
+    _make_stat_value( dl, data, bonus, 'attr' );
+}
+
+function make_paired_roll_button (id, rune)
+{
+    var btn  = document.createElement( 'div' );
+
+    btn.setAttribute( 'class', 'roll' );
+    btn.setAttribute( 'id'   , 'invoke.' + id + rune );
+    if( rune_glyph[ rune ] )
+        btn.textContent = rune_glyph[ rune ] + '  ';
+    else
+        btn.textContent = '☯  ';
+    btn.style.width = '2em';
+    btn.style.clear = 'none';
+    btn.style.float = 'left';
+
+    return btn;
+}
+
+function make_paired_value (dl, data)
+{
+    var d0   = document.createElement( 'dd'   );
+    var s0v  = document.createElement( 'span' );
+
+    var d1   = document.createElement( 'dd'   );
+    var s1v  = document.createElement( 'span' );
+
+    var cssc = 'editable uint prune';
+    var v0   = data.val;
+    var v1   = 100 - data.val;
+    var id   = dl.getAttribute( 'id' ) + '.';
+
+    var s0b  = make_paired_roll_button( id, data.subkeys[ 0 ] );
+    var s1b  = make_paired_roll_button( id, data.subkeys[ 1 ] );
+    var rune;
+
+    rune = data.subkeys[ 0 ];
+    s0v.setAttribute( 'class', cssc );
+    s0v.setAttribute( 'id'   , id + rune );
+    s0v.textContent = '' + v0;
+
+    rune = data.subkeys[ 1 ];
+    s1v.setAttribute( 'class', cssc );
+    s1v.setAttribute( 'id'   , id + rune );
+    s1v.textContent = '' + v1;
+
+    d0.appendChild( s0b );
+    d0.appendChild( s0v );
+
+    d1.appendChild( s1b );
+    d1.appendChild( s1v );
+
+    dl.appendChild( d0 );
+    dl.appendChild( d1 );
+}
+
+function item_label (data)
+{
+    switch( data.type )
+    {
+      case 'emotion':
+          return ucfirst( data.subtype ) + ' (' + data.target + ')';
+      case 'prune':
+          return ucfirst( data.subkeys[0] + '/' + data.subkeys[1] );
+      case 'attr':
+      case 'stat':
+      case 'rune':
+      case 'dice':
+      default:
+          return data.label ? data.label : ucfirst( data.key );
+    }
+}
+
+function make_item (dl, data, width, bonus)
+{
+    var dt = document.createElement( 'dt' );
+    var label = item_label( data );
+
+    dt.style.width = width;
+    dt.textContent = label;
+    dl.appendChild( dt );
+
+    bonus = bonus * 1;
+
+    switch( data.type )
+    {
+      case 'attr':
+          make_attr_value( dl, data, bonus );
+          break;
+      case 'emotion':
+          make_stat_value( dl, data, bonus );
+          break;
+      case 'prune':
+          make_paired_value( dl, data );
+          break;
+      case 'stat':
+      case 'rune':
+      case 'dice':
+      default:
+          make_stat_value( dl, data, bonus );
+          break;
+    }
+}
+
+function calc_enc ()
+{
+    var str = get_entry( 'stats.str' );
+    var con = get_entry( 'stats.con' );
+
+    if( !str || !con )
+        return;
+
+    var enc = document.getElementById( 'derived.enc' );
+
+    if( !enc )
+        return;
+    
+    var sv  = str.val * 1;
+    var cv  = con.val * 1;
+    
+    enc.textContent = '' + ( (sv <= cv) ? sv : (maths.round( (sv + cv) / 2 )) );
+}
+
+function calc_mp ()
+{
+    var pow = get_entry( 'stats.pow' );
+    var mp = document.getElementById( 'derived.mp' );
+
+    if( !pow || !mp )
+        return;
+
+    mp.textContent = '' + pow.val;
+}
+
+function calc_siz_sr ()
+{
+    var siz = get_entry( 'stats.siz' );
+    var sr  = document.getElementById( 'derived.srs' );
+
+    if( !siz )
+        return;
+
+    var val = siz.val * 1;
+
+    sr.textContent = '' +
+        ( (val <=  6) ? 3 :
+          (val <= 14) ? 2 :
+          (val <= 21) ? 1 : 0 );
+}
+
+function calc_dex_sr ()
+{
+    var dex = get_entry( 'stats.dex' );
+    var sr  = document.getElementById( 'derived.srd' );
+
+    if( !dex )
+        return;
+
+    var val = dex.val * 1;
+
+    sr.textContent = '' +
+        ( (val <=  5) ? 5 :
+          (val <=  8) ? 4 :
+          (val <= 12) ? 3 :
+          (val <= 15) ? 2 :
+          (val <= 18) ? 1 : 0 );
+}
+
+function calc_sp_dam ()
+{
+    var pow = get_entry( 'stats.pow' );
+    var cha = get_entry( 'stats.cha' );
+    var spd = document.getElementById( 'derived.spd' );
+
+    if( !pow || !cha )
+        return;
+
+    var val = (pow.val * 1) + (cha.val * 1);
+    
+    spd.textContent =
+        ( (val <= 12) ? '1d3'   :
+          (val <= 24) ? '1d6'   :
+          (val <= 32) ? '1d6+1' :
+          (val <= 40) ? '1d6+3' :
+          (val <= 56) ? '2d6+3' :
+          ''  + (maths.ceil( (val - 56) / 16.0 ) + 2) + 'd6' +
+          '+' + (maths.ceil( (val - 56) / 16.0 ) + 3) );
+}
+
+function calc_damage ()
+{
+    var str = get_entry( 'stats.str' );
+    var siz = get_entry( 'stats.siz' );
+    var dam = document.getElementById( 'derived.dam' );
+
+    if( !str || !siz )
+        return;
+
+    var val = (str.val * 1) + (siz.val * 1);
+    
+    dam.textContent =
+        ( (val <= 12) ? '-1d4' :
+          (val <= 24) ? '0'    :
+          (val <= 32) ? '+1d4' :
+          (val <= 40) ? '+1d6' :
+          '+' + (maths.ceil( (val - 40) / 16.0 ) + 1) + 'd6' );
+}
+
+function calc_healrate ()
+{
+    var con = get_entry( 'stats.con' );
+    var hlr = document.getElementById( 'derived.hlr' );
+
+    if( !con )
+        return;
+
+    hlr.textContent = '' + maths.ceil( con.val * 1 / 6.0 );
+}
+
+function calc_max_hp ()
+{
+    var con = document.getElementById( 'stats.con' );
+    var siz = document.getElementById( 'stats.siz' );
+    var pow = document.getElementById( 'stats.pow' );
+
+    if( !con || !siz || !pow )
+        return;
+    
+    var cv = con.textContent * 1;
+    var sv = siz.textContent * 1;
+    var pv = pow.textContent * 1;
+
+    var hp =
+        ( cv + maths.ceil( sv / 4.0 ) - 3 +
+          ( (pv <= 4 ) ? -1 :
+            (pv <= 16) ?  0 : maths.ceil( (pv - 16) / 4.0 ) ) );
+
+    var hit = document.getElementById( 'derived.hp' );
+    if( hit )
+    {
+        hit.textContent = '' + hp;
+        update_hitpoints();
+    }
+}
+
+const hits = { legl: [0,1,1,1,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6,7,7,7] ,
+               legr: [0,1,1,1,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6,7,7,7] ,
+               arml: [0,1,1,1,2,2,2,3,3,3,3,3,3,4,4,4,5,5,5,6,6,6] ,
+               armr: [0,1,1,1,2,2,2,3,3,3,3,3,3,4,4,4,5,5,5,6,6,6] ,
+               body: [0,1,1,1,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6,7,7,7] ,
+               chest:[0,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6,8,8,8,9,9,9] ,
+               head: [0,1,1,1,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6,7,7,7] };
+
+function update_hitpoints ()
+{
+    var master = document.getElementById( 'derived.hp' );
+    var maxhp  = master ? (master.textContent * 1) : 0;
+    var max;
+    var cur;
+    var loss = 0;
+
+    for( const area of Object.keys( hits ) )
+    {
+        var mid = 'hitpoints.' + area + '.max';
+        var cid = 'hitpoints.' + area + '.cur';
+        var hp  = hits[area][maxhp];
+        if( max = document.getElementById( mid ) )
+            max.textContent = '' + hp;
+        if( cur = document.getElementById( cid ) )
+            loss += (hp - (cur.textContent * 1));
+    }
+
+    if( max = document.getElementById( 'hitpoints.total.max' ) )
+        max.textContent = '' + maxhp;
+    if( cur = document.getElementById( 'hitpoints.total.cur' ) )
+        cur.textContent = '' + (maxhp - loss);
+}
+
+function reset_hitpoints (e)
+{
+    var master = document.getElementById( 'derived.hp' );
+    var maxhp  = master ? (master.textContent * 1) : 0;
+    var max;
+    var cur;
+    var loss = 0;
+
+    for( const area of Object.keys( hits ) )
+    {
+        var mid = 'hitpoints.' + area + '.max';
+        var cid = 'hitpoints.' + area + '.cur';
+        var hp  = hits[ area ][ maxhp ];
+        if( max = document.getElementById( mid ) )
+            if( cur = document.getElementById( cid ) )
+                cur.textContent = max.textContent = '' + hp;
+        if( cur )
+            update_item( cid, hp, true );
+    }
+
+    if( max = document.getElementById( 'hitpoints.total.max' ) )
+        if( cur = document.getElementById( 'hitpoints.total.cur' ) )
+            cur.textContent = max.textContent = '' + maxhp;
+    if( cur )
+        update_item( 'hitpoints.total.cur', hp, true );
+}
+
+function group_modifier (g)
+{
+    var bonus = 0;
+    var stat;
+    var val;
+    var ancestor;
+    
+    if( !g.modifier )
+        return g.bonus;
+
+    if( g.modifier.inherit )
+        if( ancestor = get_group( g.modifier.inherit ) )
+            return group_modifier( ancestor );
+    
+    if( g.modifier.primary )
+        for( const s of g.modifier.primary )
+            if( stat = get_entry( 'stats.' + s ) )
+                bonus += (maths.ceil( (stat.val * 1) / 4 ) - 3) * 5;
+
+    if( g.modifier.disability )
+        for( const s of g.modifier.disability )
+            if( stat = get_entry( 'stats.' + s ) )
+                bonus -= (maths.ceil( (stat.val * 1) / 4 ) - 3) * 5;
+
+    if( g.modifier.secondary )
+        for( const s of g.modifier.secondary )
+            if( stat = get_entry( 'stats.' + s ) )
+                if( val = stat.val * 1 )
+                    bonus += ( (val <=  4) ? -5 :
+                               (val <= 16) ?  0 :
+                               maths.ceil( (val - 16) / 4 ) * 5 );
+
+    if( g.modifier.penalty )
+        for( const s of g.modifier.penalty )
+            if( stat = get_entry( 'stats.' + s ) )
+                if( val = stat.val * 1 )
+                    bonus -= ( (val <=  4) ? -5 :
+                               (val <= 16) ?  0 :
+                               maths.ceil( (val - 16) / 4 ) * 5 );
+
+
+    
+    return bonus;
+}
+
+function add_stat_groups ()
+{
+    var new_groups = [];
+
+    for( const g of groups )
+    {
+        if( !g.draw ) // this groups is pre-rendered in the html
+         {
+            var cid = g.group + '-container';
+            var grp = document.getElementById( cid );
+            if( !grp )
+                continue;
+
+            for( const si of g.items )
+            {
+                var sid = g.group + '.' + si.key;
+                var sel = document.getElementById( sid );
+                if( sel )
+                    sel.textContent = si.val;
+            }
+
+            // remove the prerendered item from wherever it was
+            // on the page. It will be added back in the order
+            // of the entries in groups:
+            grp.parentNode.removeChild( grp );
+            new_groups.push( grp );
+            continue;
+        }
+        
+        var grp = document.createElement( 'div' );
+        grp.setAttribute( 'id', g.group + '-container' );
+        grp.setAttribute( 'class', 'group' );
+
+        if( g.modifier )
+            g.bonus = group_modifier( g );
+
+        var title = document.createElement( 'h3' );
+        title.textContent = group_title( g );
+        title.setAttribute( 'id', g.group + '-title' );
+
+        var lst = document.createElement( 'dl' );
+        lst.setAttribute( 'id', g.group )
+
+        var j = 0;
+        var width = 0;
+        for( const i of g.items ) { j++; width += item_label( i ).length; }
+        width = maths.round( (width / j) / 1.25 ) + "em";
+        
+        for( const i of g.items )
+            make_item( lst, i, width, g.bonus ? g.bonus : 0 );
+
+        new_groups.push( grp );
+        grp.appendChild( title );
+        grp.appendChild( lst );
+    }
+
+    var banner = document.getElementById( 'groups' );
+    
+    for( const i of new_groups )
+        banner.appendChild( i );
+}
+
+function group_title(g)
+{
+    var ttext = g.label;
+
+    if( g.bonus != undefined )
+        ttext += ' (' + ((g.bonus >= 0) ? '+' : '') + (g.bonus * 1) + ')';
+
+    return ttext;
+}
+
+function refresh_group (g)
+{
+    if( !g || !g.modifier )
+        return;
+
+    var new_bonus = group_modifier( g );
+    
+    if( g.bonus == new_bonus )
+        return
+
+    g.bonus = new_bonus;
+
+    var title = document.getElementById( g.group + '-title' );
+    if( title )
+        title.textContent = group_title( g );
+    
+    var inode;
+    for( const i of g.items )
+        if( inode = document.getElementById( g.group + '.' + i.key ) )
+            inode.textContent = '' + (g.bonus + (i.val * 1));
+}
+
+function load_group_data ()
+{
+    for( const s of Object.keys( localStorage ) )
+    {
+        var cur = get_entry( s );
+
+        if( cur && cur.noedit ) // non-editable element, ignore cached values
+            continue;
+        
+        const id = split_id( s );
+        var   nv = localStorage.getItem( s );
+        const group_name = id[ 0 ];
+        const entry_name = id[ 1 ];
+        var   group = get_group( group_name );
+        var   i = 0;
+        var   n = undefined;
+
+        if( !group      ) continue;
+        if( !entry_name ) continue;
+        if( !nv         ) continue;
+        //console.log( 'parse('+ nv +')');
+        nv = JSON.parse( nv );
+        if( !nv         ) continue;
+
+        for( i = 0; i < group.items.length && n == undefined; i++ )
+            if( group.items[i]['key'] == entry_name )
+                n = i;
+
+        if( n == undefined )
+            group.items.push( nv );
+        else
+            group.items[ n ] = nv;
+    }
+}
+
+function clear_element (e,text)
+{
+    var c;
+    while( c = e.firstChild )
+        e.removeChild( c );
+    e.textContent = '';
+
+    if( !text  )
+        return;
+
+    var txt = document.createElement( 'div' );
+    txt.setAttribute( 'class', 'rlabel' );
+    txt.textContent = text;
+    e.appendChild( txt );
+    return;
+}
+
+function roll_d100 (result, skill, prefix)
+{
+    var rolled = maths.floor( maths.random() * 100 ) + 1;
+    var crit   = maths.round( skill / 20 );
+    var spec   = maths.round( skill / 5  );
+    var fumble = maths.round( 100.99 - ((100 - skill) / 20) );
+    var label  = "";
+    var adjlev = ( skill > 95 ) ? 95 : skill;
+    
+    if( rolled == 1 || rolled <= crit )
+        label = "CRIT!";
+    else if( rolled <= spec )
+        label = "SPEC!";
+    else if( rolled <= adjlev )
+        label = "PASS";
+    else if( rolled < fumble )
+        label = "FAIL";
+    else
+        label = "FUMBLE!";
+
+    if( result )
+    {
+        clear_element( result, '🎲' );
+        result.textContent  = prefix ? (prefix + " ") : '';
+        result.textContent += rolled + "/" + skill;
+        if( label )
+            result.textContent += " = " + label;
+    }
+
+    return [ rolled, label ];
+}
+
+function roll_ndx (ndx)
+{
+    var seq = ndx.split('d');
+    var n   = seq[ 0 ] * 1;
+    var x   = seq[ 1 ] * 1;
+    var r = 0;
+
+    if( n < 1 )
+        n = 1;
+
+    if( x < 1 )
+        return 0;
+
+    for(var i = 0; i < n; i++)
+        r += maths.floor( maths.random() * x )  + 1;
+    
+    return r;
+}
+
+const ndxre = /\d*d\d+|[+-]|\d+/g;
+function roll_ndxseq (result, skill)
+{
+    var op = '+';
+    var rolled = 0;
+    var dice = [];
+    var m;
+    while( m = ndxre.exec( skill ) )
+        dice.push( m[0] );
+    
+    for( const d of dice )
+    {
+        var r = 0;
+        if( d == '+' || d == '-' ) { op = d; continue; }
+
+        if( isNaN(d) ) { r = roll_ndx(d); }
+        else             { r = d * 1 }
+
+        if( op == '+' ) { rolled += r; }
+        else            { rolled -= r; }
+    }
+
+    if( result )
+    {
+        clear_element( result, '🎲' );
+        result.textContent = dice.join(' ') + ' = ' + rolled;
+    }
+    
+    return rolled;
+}
+
+function roll_nx (e)
+{
+    var nx = this.textContent;
+    var found = /(\d+)×/u.exec( nx );
+
+    if( !found )
+        return undefined;
+
+    var attr  = document.getElementById( 'nxvalue' );
+    var panel = document.getElementById( 'result'  );
+    var label = document.getElementById( 'rlabel'  );
+
+    if( !attr || ! panel )
+        return undefined;
+    
+    var stat  = attr.textContent * 1;
+    var multi = found[1] * 1;
+    var text  = label ? label.textContent : '';
+
+    if( attr && panel )
+        return roll_d100( panel, stat * multi, text );
+
+    return undefined;
+}
+
+function roll_prune (panel, node)
+{
+    var id    = node.getAttribute( 'id' );
+    var ident = split_id( id );
+    var rid   = ident[ 1 ];
+    var prune = document.getElementById( rid );
+
+    if( prune )
+    {
+        var label = ucfirst( split_id( rid )[ 1 ] ) + ':';
+        var level = prune.textContent * 1;
+        return roll_d100( panel, level, label );
+    }
+
+    return undefined;
+}
+
+function setup_nx_roll (panel, node, attr)
+{
+    var opt_group = document.createElement( 'div' );
+    var att_div   = document.createElement( 'div' );
+    var prev;
+    clear_element( panel, '🎲' );
+
+    att_div.textContent = '' +  attr
+    att_div.setAttribute( 'id', 'nxvalue' );
+    att_div.setAttribute( 'class', 'rlabel' );
+    
+    opt_group.setAttribute( 'class', 'nxroll' );
+
+    if( node && node.parentNode )
+        prev = node.parentNode.previousElementSibling;
+    
+    if( prev )
+    {
+        var ldiv = document.createElement( 'div' );
+        ldiv.textContent = prev.textContent + ':';
+        ldiv.setAttribute( 'class', 'rlabel' );
+        ldiv.setAttribute( 'id',    'rlabel' );
+        opt_group.appendChild( ldiv );
+    }
+    opt_group.appendChild( att_div );
+
+    panel.appendChild( opt_group );
+
+    for( var x = 0; x < 5; x++ )
+    {
+        var opt = document.createElement( 'div' );
+        opt.setAttribute( 'class', 'nxopt' );
+        opt.textContent = (x+1) + '×';
+        opt.onclick = roll_nx;
+        opt_group.appendChild( opt );
+    }
+}
+
+function roll_hit_location (panel, node)
+{
+    var loc  = roll_ndx( "1d20" );
+    var name = '';
+    var id   = node.getAttribute( 'id' ) || 'hit.generic';
+    var type = split_id( id )[ 1 ];
+
+    switch( type )
+    {
+      case 'melee':
+          switch( loc )
+          {
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+                name = 'right leg';
+                break;
+            case 5:
+            case 6:
+            case 7:
+            case 8:
+                name = 'left leg';
+                break;
+            case 9:
+            case 10:
+            case 11:
+                name = 'abdomen';
+                break;
+            case 12:
+                name = 'chest';
+                break;
+            case 13:
+            case 14:
+            case 15:
+                name = 'right arm';
+                break;
+            case 16:
+            case 17:
+            case 18:
+                name = 'left arm';
+                break;
+            case 19:
+            case 20:
+                name = 'head';
+                break;
+            default:
+          }
+          break;
+      case 'missile':
+          switch( loc )
+          {
+            case 1:
+            case 2:
+            case 3:
+                name = 'right leg';
+                break;
+            case 4:
+            case 5:
+            case 6:
+                name = 'left leg';
+                break;
+            case 7:
+            case 8:
+            case 9:
+            case 10:
+                name = 'abdomen';
+                break;
+            case 11:
+            case 12:
+            case 13:
+            case 14:
+            case 15:
+                name = 'chest';
+                break;
+            case 16:
+            case 17:
+                name = 'right arm';
+                break;
+            case 18:
+            case 19:
+                name = 'left arm';
+                break;
+            case 20:
+                name = 'head';
+                break;
+            default:                
+          }
+          break;
+      default:
+    }
+
+    clear_element( panel, '🎲' );
+    type = type == 'melee' ? 'Melée' : ucfirst( type );
+
+    if( name )
+        panel.textContent = 'Hit (' + type + ') ' + loc + ' = ' + name;
+    else
+        panel.textContent = 'Bam! Right in the #' + loc;
+
+    return loc;
+}
+
+function do_something (e)
+{
+    var target = this.nextElementSibling;
+    var rtype  = editclass( target );
+    var atype  = updateclass( target );
+    var rnode  = document.getElementById( 'result' );
+
+    if( atype == 'prune' )
+        return roll_prune( rnode, this );
+
+    if( atype == 'hit' )
+        return roll_hit_location( rnode, this );
+    
+    if( rtype == 'dice' )
+        return roll_ndxseq( rnode, target.textContent );
+
+    if( atype == 'attr' )
+        if( rtype == 'uint' )
+            return setup_nx_roll( rnode, this, target.textContent );
+    
+    if( atype == 'skill' )
+        if( rtype == 'uint' )
+            return roll_d100( rnode,
+                              target.textContent * 1,
+                              this.parentNode.previousElementSibling.textContent + ':' );
+
+    rnode.textContent = 'What?';
+}
+
+function initialise ()
+{
+    var n;
+    var v;
+    var editable;
+    var pinfo;
+    var node;
+    var rollable;
+    const uint_allowed = "0123456789";
+    const dice_allowed = "0123456789+-d ";
+    const pinfo_pat    = "//*[starts-with(@id, 'personal-info.')]";
+
+    load_group_data();
+    
+    add_stat_groups();
+
+    calc_max_hp();
+    calc_healrate();
+    calc_damage();
+    calc_sp_dam();
+    calc_dex_sr();
+    calc_siz_sr();
+    calc_enc();
+    calc_mp();
+    
+    pinfo = xpath( pinfo_pat );
+    for( n = 0; pinfo && (n < pinfo.snapshotLength); n++ )
+        if( node = pinfo.snapshotItem( n ) )
+            if( v = node.getAttribute( 'id' ) )
+                if( (v = localStorage.getItem( v )) != null )
+                    node.textContent = v;
+
+    rollable = xpath( "//*[" + xmatch_class('roll') + "]" );
+    for( n = 0; n < rollable.snapshotLength; n++ )
+    {
+        var node = rollable.snapshotItem( n );
+        node.addEventListener( 'click', do_something );
+    }
+
+    editable = xpath( "//*[" + xmatch_class('editable') + "]" );
+    if( !editable || editable.snapshotLength <= 0 )
+        return 0;
+    
+    // carriage return, newline
+    for( const c in suppressed_keys )
+        for( const k of [0xa, 0xd] )
+            suppressed_keys[c][k] = true;
+
+    // the digits
+    for( var i = 0; i < uint_allowed.length; i++ )
+        allowed_keys['uint'][uint_allowed.charCodeAt( i )] = true;
+
+    // dice-spec
+    for( var i = 0; i < dice_allowed.length; i++ )
+        allowed_keys['dice'][dice_allowed.charCodeAt( i )] = true;
+    
+    // since the order is allow/deny with a first-match-wins strategy
+    // we must specifically allow movement keys for restricted input
+    // classes like uint: arrow keys + bs tab del
+    for( const c in allowed_keys )
+    {
+        allowed_keys[c][46] = true;
+        allowed_keys[c][8]  = true;
+        allowed_keys[c][9]  = true;
+        for( var i = 35; i <= 40; i++ )
+            allowed_keys[c][i] = true;
+    }
+
+    for( n = 0; n < editable.snapshotLength; n++ )
+    {
+        var node = editable.snapshotItem( n );
+        node.contentEditable = "true";
+        node.addEventListener( 'input', handle_edit_event );
+        node.addEventListener( 'keydown', suppress_input  );
+    }
+
+    return n;
+}

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+    <!-- Copyright © 2019 Vivek Das Mohapatra <vivek@etla.org> -->
+    <title></title>
+    <script type="text/javascript" src="glorantha-character.js"></script>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <style type="text/css">
+      body { background-color: rgb(0,0,0); color: rgb(255,255,255); }
+      div  { border: 2px solid white; border-radius: 3px; }
+      #banner { width: 100%; border: 0px; }
+      .chinfo { float: left; padding: 4px; }
+      #groups { width: 100%;
+                display: flex;
+                flex-wrap: wrap;
+                border: 0px;
+                justify-content: space-between; }
+
+      .rlabel { border: 0px; clear: none; float: left; }
+      .result { width: auto; font-size: 350%; float: right;
+                position: fixed; top: 7px; right: 7px;
+                background-color: rgb(0,0,0); }
+
+      .nxroll { display: flex; flex-wrap: wrap; border: 0px; float: left;
+                justify-content: space-between; clear: none; }
+      .nxopt       { width: auto; flex-grow: 1; }
+      .nxopt:hover { background-color: rgb(16,16,64); }
+
+      .group  { width: auto; flex-grow: 1; }
+
+      dt::after  { content: ": "; }
+      dl { overflow: hidden; }
+      dt, dd { float: left; display: block; }
+      dd { clear: none; }
+      dt { width: 9em; clear: both; }
+
+      .editable { background-color: rgb(32,32,32); }
+
+      .silhouette { clear: none;
+                    background-size: contain;
+                    background-repeat: no-repeat;
+                    background-position: center;
+                    background-image: url("./silhouette-m.svg");
+                    display: grid;
+                    grid-template-rows: 15% 10% 10% 30% 15% 15%;
+                    grid-template-columns: 1fr 1fr 1fr; }
+      .silhouette td { text-align: center; }
+      .hp { border: 0px; text-align: center; padding-top: 10px; }
+      #hitpoints-label     { clear: none;  grid-row: 1; grid-column: 1;
+                             background-color: rgb(32,32,32); cursor: pointer; }
+      #hitpoints-head-div  { grid-row: 1; grid-column: 2; }
+      #hitpoints-chest-div { grid-row: 2; grid-column: 2; }
+      #hitpoints-armr-div  { grid-row: 3; grid-column: 1; }
+      #hitpoints-arml-div  { grid-row: 3; grid-column: 3; }
+      #hitpoints-body-div  { grid-row: 4; grid-column: 2; }
+      #hitpoints-legr-div  { grid-row: 5; grid-column: 1; }
+      #hitpoints-legl-div  { grid-row: 5; grid-column: 3; }
+      #hitpoints-total-div { grid-row: 6; grid-column: 2; }
+      #hitpoints-total-div > span { background-color: rgb(0,0,127); }
+
+      .roll { cursor: pointer; border: 0px; }
+      .roll:hover { background-color: rgb(32,32,96); }
+    </style>
+  </head>
+  <body onload="initialise();">
+    <div id="banner">
+      <div class="chinfo" id="chinfo">
+        <dl id="personal-info">
+          <dt>Name</dt>
+          <dd id="personal-info.name" class="editable text pinfo">_</dd>
+          <dt>Occupation</dt>
+          <dd id="personal-info.occupation" class="editable text pinfo">_</dd>
+          <dt>Reputation</dt>
+          <dd>
+            <span class="roll">🎲</span>
+            <span id="personal-info.reputation" class="editable uint skill">_</span>
+          </dd>
+          <dt>Roll</dt>
+          <dd>
+            <span class="roll">🎲</span>
+            <span class="editable dice attr">1d100</span>
+          </dd>
+          <dt>Hit Location (Melée)</dt>
+          <dd>
+            <span class="roll" id="hit.melee">🎲</span>
+            <span class="dice hit">1d20</span>            
+          </dd>
+          <dt>Hit Location (Missile)</dt>
+          <dd>
+            <span class="roll" id="hit.missile">🎲</span>
+            <span class="dice hit">1d20</span>            
+          </dd>
+        </dl>
+      </div>
+      <div class="result" id="result">🎲</div>
+      <br clear="all"/>
+    </div>
+    <div id="groups">
+      <div id="hitpoints-container" class="group silhouette">
+        <!-- div class="silhouette" -->
+        <div id="hitpoints-label" class="hp"
+             onclick="reset_hitpoints();">HP↺</div>
+        <div id="hitpoints-head-div" class="hp">
+          <span id="hitpoints.head.cur"
+                class="editable attr uint">0</span>/<span
+                id="hitpoints.head.max"
+                class="attr uint">0</span>
+        </div>
+        <div id="hitpoints-armr-div" class="hp">
+          <span id="hitpoints.armr.cur"
+                class="editable attr uint">0</span>/<span
+                id="hitpoints.armr.max"
+                class="attr uint">0</span>
+        </div>
+        <div id="hitpoints-chest-div" class="hp">
+          <span id="hitpoints.chest.cur"
+                class="editable attr uint">0</span>/<span
+                id="hitpoints.chest.max"
+                class="attr uint">0</span>
+        </div>
+        <div id="hitpoints-arml-div" class="hp">
+          <span id="hitpoints.arml.cur"
+                class="editable attr uint">0</span>/<span
+                id="hitpoints.arml.max"
+                class="attr uint">0</span>
+        </div>
+        <div id="hitpoints-body-div" class="hp">
+          <span id="hitpoints.body.cur"
+                class="editable attr uint">0</span>/<span
+                id="hitpoints.body.max"
+                class="attr uint">0</span>
+        </div>
+        <div id="hitpoints-legr-div" class="hp">
+          <span id="hitpoints.legr.cur"
+                class="editable attr uint">0</span>/<span
+                id="hitpoints.legr.max"
+                class="attr uint">0</span>
+        </div>
+        <div id="hitpoints-legl-div" class="hp">
+          <span id="hitpoints.legl.cur"
+                class="editable attr uint">0</span>/<span
+                id="hitpoints.legl.max"
+                class="attr uint">0</span>
+        </div>
+        <div id="hitpoints-total-div" class="hp">
+          <span id="hitpoints.total.cur"
+                class="attr uint">0</span>/<span
+                id="hitpoints.total.max"
+                class="attr uint">0</span>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
