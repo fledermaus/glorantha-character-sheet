@@ -7,10 +7,46 @@
     <script type="text/javascript" src="glorantha-character.js"></script>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <style type="text/css">
-      body { background-color: rgb(0,0,0); color: rgb(255,255,255); }
-      div  { border: 2px solid white; border-radius: 3px; }
-      #banner { width: 100%; border: 0px; }
-      .chinfo { float: left; padding: 4px; }
+      @font-face { font-family: glorantha-sans;
+                   src: local("freesans"),
+                   url("glorantha-fonts/unifont_upper.ttf") format("truetype"),
+                   url("glorantha-fonts/FreeSans.otf") format("opentype"),
+                   url("glorantha-fonts/FreeSans.ttf") format("truetype"); }
+
+      @font-face { font-family: glorantha-uuni;
+                   src: local("unifont upper"),
+                   url("./glorantha-fonts/unifont_upper.ttf") format("truetype"); }
+
+      @font-face { font-family: glorantha-symbola;
+                   src: local("Symbola"),
+                   url("./glorantha-fonts/Symbola_hint.ttf") format("truetype"); }
+
+      @font-face { font-family: glorantha-bamum;
+                   src: local("Noto Sans Bamum"),
+                   url("./glorantha-fonts/NotoSansBamum-Regular.ttf") format("truetype"); }
+
+      body { background-color: rgb(0,0,0); color: rgb(255,255,255);
+            font-family: "DejaVu Sans",
+                         "Noto Color Emoji",
+                         "Noto Emoji",
+                         "glorantha-sans",
+                         "glorantha-uuni",
+                         "glorantha-symbola",
+                         "glorantha-bamum"; }
+      div  { border: 2px solid white; border-radius: 3px;
+             box-sizing:border-box; }
+
+      #banner       { width: 100%; border: 0px;  }
+      .banner-box-a { float: left; border: 0px;  }
+      .chinfo       { padding: 4px; width: 100%; }
+      .dice-bag     { padding: 4px; clear: left; width: 100%; }
+      .buffs         { float: left; padding: 4px; display: flex;
+                       flex-direction: column; }
+      .buffopt       { display: flex; border: 0px; padding: 4px; }
+      .buffopt:hover { background-color: rgb(16,16,64); }
+      .buffopt > div { border: 0px; padding: 2px; }
+      .buffopt > div:first-child + div { width: 100%; }
+
       #groups { width: 100%;
                 display: flex;
                 flex-wrap: wrap;
@@ -27,7 +63,20 @@
       .nxopt       { width: auto; flex-grow: 1; }
       .nxopt:hover { background-color: rgb(16,16,64); }
 
-      .group  { width: auto; flex-grow: 1; }
+      .group         { width: auto; flex-grow: 1; border-radius: 7px; }
+      .new-item      { float: right; clear: right; border: 0px;
+                       position: relative; top: 5px; right: 5px;
+                       cursor: pointer; }
+      .new-item-form { position: fixed; right: 50%; top: 50%;
+                       display: grid; grid-template-columns: 1fr 3fr;
+                       background-color: rgb(16,16,16);
+                       border-radius: 5px; }
+
+      .new-item-form > div    { display: grid; border: 0px;
+                                padding: 3px; margin: 1px;
+                                background-color: rgb(32,32,32); }
+      .new-item-form > div:first-child
+                              { grid-column: 1 / 3; }
 
       dt::after  { content: ": "; }
       dl { overflow: hidden; }
@@ -35,7 +84,7 @@
       dd { clear: none; }
       dt { width: 9em; clear: both; }
 
-      .editable { background-color: rgb(32,32,32); }
+      .editable { background-color: rgb(48,48,48); }
 
       .silhouette { clear: none;
                     background-size: contain;
@@ -65,36 +114,59 @@
   </head>
   <body onload="initialise();">
     <div id="banner">
-      <div class="chinfo" id="chinfo">
-        <dl id="personal-info">
-          <dt>Name</dt>
-          <dd id="personal-info.name" class="editable text pinfo">_</dd>
-          <dt>Occupation</dt>
-          <dd id="personal-info.occupation" class="editable text pinfo">_</dd>
-          <dt>Reputation</dt>
-          <dd>
-            <span class="roll">🎲</span>
-            <span id="personal-info.reputation" class="editable uint skill">_</span>
-          </dd>
-          <dt>Roll</dt>
-          <dd>
-            <span class="roll">🎲</span>
-            <span class="editable dice attr">1d100</span>
-          </dd>
-          <dt>Hit Location (Melée)</dt>
-          <dd>
-            <span class="roll" id="hit.melee">🎲</span>
-            <span class="dice hit">1d20</span>            
-          </dd>
-          <dt>Hit Location (Missile)</dt>
-          <dd>
-            <span class="roll" id="hit.missile">🎲</span>
-            <span class="dice hit">1d20</span>            
-          </dd>
-        </dl>
+      <div class="banner-box-a">
+        <div class="chinfo" id="chinfo">
+          <dl id="personal-info">
+            <dt>Name</dt>
+            <dd id="personal-info.name" class="editable text pinfo">_</dd>
+            <dt>Occupation</dt>
+            <dd id="personal-info.occupation" class="editable text pinfo">_</dd>
+            <dt>Reputation</dt>
+            <dd>
+              <span class="roll">🎲</span>
+              <span id="personal-info.reputation"
+                    class="editable uint skill">_</span>
+            </dd>
+          </dl>
+        </div>
+        <div class="dice-bag" id="dice-bag">
+          <dl id="misc-dice">
+            <dt>Roll</dt>
+            <dd>
+              <span class="roll">🎲</span>
+              <span class="editable dice">1d100</span>
+            </dd>
+            <dt>Skill</dt>
+            <dd>
+              <span class="roll">🎲</span>
+              <span class="editable uint skill">50</span>
+            </dd>
+            <dt>Hit Location (Mêlée)</dt>
+            <dd>
+              <span class="roll" id="hit.melee">🎲</span>
+              <span class="dice hit">1d20</span>
+            </dd>
+            <dt>Hit Location (Missile)</dt>
+            <dd>
+              <span class="roll" id="hit.missile">🎲</span>
+              <span class="dice hit">1d20</span>
+            </dd>
+          </dl>
+        </div>
+      </div>
+      <div id="buff-opts" class="buffs" style="height: 100%">
+        <div class="buffopt">
+          <div>▲</div><div>1-Shot Buff</div><div>▲</div>
+        </div>
+        <div class="buffopt">
+          <div>⏫</div><div>Inspire</div><div>⏫</div>
+        </div>
+        <div class="buffopt">
+          <div>±</div><div>Roll Modifier</div><div>±</div>
+        </div>
       </div>
       <div class="result" id="result">🎲</div>
-      <br clear="all"/>
+      <!-- br clear="all"/ -->
     </div>
     <div id="groups">
       <div id="hitpoints-container" class="group silhouette">

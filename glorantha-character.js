@@ -31,9 +31,9 @@ const rune_glyph = { darkness:  '●',
                      illusion:  '⛬',
                      fertility: 'ⴵ', // ⧖
                      death:     '✝',
-                     harmony:   '𝍫',
+                     harmony:   'Ⅲ', // 𝍫
                      disorder:  '𖥱',
-                     man:       '𐀼̯', // ⟟̵̭ ⫯̵̯
+                     man:       'ಗ̊', // 'గీ', // '𐀼̯', // ⟟̵̭ ⫯̵̯
                      beast:     '▽',
                      plant:     '𐙋' }; // ᪴
 
@@ -51,6 +51,31 @@ const attr_map = { 'stats.con':  [ calc_max_hp, calc_healrate, calc_enc    ] ,
                    'hitpoints.body.cur':  [ update_hitpoints ] ,
                    'hitpoints.legl.cur':  [ update_hitpoints ] ,
                    'hitpoints.legr.cur':  [ update_hitpoints ] };
+
+var extn_template =
+{
+    skill:   { save:   add_new_skill,
+               draw:   draw_skill_input_form,
+               fields: [ { name: 'label', type: 'text' } ,
+                         { name: 'base',  type: 'base' } ,
+                         { name: 'skill', type: 'uint' } ] },
+    // emotion: { save:   add_new_emotion,
+    //            draw:   draw_emotion_input_form,
+    //            fields: [ { name: 'type',
+    //                        type: ['hate','love','loyalty','devotion'] },
+    //                      { name: 'subject', type: 'text' } ,
+    //                      { name: 'level',   type: 'uint' } ] },
+    // rune:    { save: add_new_rune,
+    //            draw: draw_rune_input_form,
+    //            fields: [ { name: 'label', type: 'text' } ,
+    //                      { name: 'glyph', type: 'text' } ,
+    //                      { name: 'level', type: 'uint' } ] },
+    // weapon:  { save: add_weapon,
+    //            draw: draw_weapon_input_form,
+    //            fields: [ { name: 'label', type: 'text' } ,
+    //                      { name: 'skill', type: 'uint' } ] }
+}
+
 var groups =
 [
     { group: 'stats',
@@ -86,6 +111,7 @@ var groups =
     { group: 'rune',
       label: 'Runes',
       draw: true,
+      extend: 'rune',
       items: [ { key: 'darkness', type: 'rune', val: 0  } ,
                { key: 'water'   , type: 'rune', val: 0  } ,
                { key: 'earth'   , type: 'rune', val: 0  } ,
@@ -99,152 +125,180 @@ var groups =
       items: [ { key: 'velocity'   , type: 'prune', subkeys: [ 'stasis'   , 'movement' ], val: 50 } ,
                { key: 'veracity'   , type: 'prune', subkeys: [ 'truth'    , 'illusion' ], val: 50 } ,
                { key: 'vitality'   , type: 'prune', subkeys: [ 'fertility', 'death'    ], val: 50 } ,
-               { key: 'vicissitude', type: 'prune', subkeys: [ 'harmony'  , 'disorder' ], val: 50 } ,
+               { key: 'variability', type: 'prune', subkeys: [ 'harmony'  , 'disorder' ], val: 50 } ,
                { key: 'viricity'   , type: 'prune', subkeys: [ 'man'      , 'beast'    ], val: 50 } ] },
+    // { key: 0, type: 'emotion', subtype: 'hate',    target: 'Authority',    val: 60 } ,
+    // { key: 1, type: 'emotion', subtype: 'hate',    target: 'Wolf Pirates', val: 60 } ,
+    // { key: 2, type: 'emotion', subtype: 'love',    target: 'Family',       val: 60 } ,
+    // { key: 3, type: 'emotion', subtype: 'loyalty', target: 'Nochet',       val: 60 } ,
+    // { key: 4, type: 'emotion', subtype: 'loyalty', target: 'Argrath',      val: 60 } ,
+    // { key: 5, type: 'emotion', subtype: 'loyalty', target: 'Holy Country', val: 60 } ,
+    // { key: 6, type: 'emotion', subtype: 'loyalty', target: 'Clan',         val: 60 } 
     { group: 'emo',
       label: 'Passions',
+      extend: 'emotion',
       draw: true,
-      items: [ { key: 0, type: 'emotion', subtype: 'hate',    target: 'Authority',    val: 60 } ,
-               { key: 1, type: 'emotion', subtype: 'hate',    target: 'Wolf Pirates', val: 60 } ,
-               { key: 2, type: 'emotion', subtype: 'love',    target: 'Family',       val: 60 } ,
-               { key: 3, type: 'emotion', subtype: 'loyalty', target: 'Nochet',       val: 60 } ,
-               { key: 4, type: 'emotion', subtype: 'loyalty', target: 'Argrath',      val: 60 } ,
-               { key: 5, type: 'emotion', subtype: 'loyalty', target: 'Holy Country', val: 60 } ,
-               { key: 6, type: 'emotion', subtype: 'loyalty', target: 'Clan',         val: 60 } ] },
+      items: [ ] },
     { group: 'agility',
       label: 'Agility',
       draw: true,
       bonus: 0,
+      extend: 'skill',
       modifier: { primary: ['dex'], secondary: ['str','pow'], penalty: ['siz'] },
-      items: [ { key: 'boat',  type: 'stat', val: 5  } ,
-               { key: 'climb', type: 'stat', val: 60 } ,
-               { key: 'dodge', type: 'stat', val: 68 } ,
-               { key: 'drive', type: 'stat', val: 5  } ,
-               { key: 'jump',  type: 'stat', val: 57 } ,
-               { key: 'ride',  type: 'stat', val: 15 } ,
-               { key: 'swim',  type: 'stat', val: 15 } ] },
+      items: [ { key: 'boat',  type: 'stat', base: 5,             val: 0 } ,
+               { key: 'climb', type: 'stat', base: 40,            val: 0 } ,
+               { key: 'dodge', type: 'stat', base: 'stats.dex*2', val: 0 } ,
+               { key: 'drive', type: 'stat', base: 5,             val: 0 } ,
+               { key: 'jump',  type: 'stat', base: 'stats.dex*3', val: 0 } ,
+               { key: 'ride',  type: 'stat', base: 5,             val: 0 } ,
+               { key: 'swim',  type: 'stat', base: 15,            val: 0 } ] },
     { group: 'magic',
       label: 'Magic',
       draw: true,
       bonus: 0,
+      extend: 'skill',
       modifier: { primary: ['pow'], secondary: ['cha'] },
-      items: [ { key: 'meditate',       type: 'stat', label: "Meditate",       val: 5  } ,
-               { key: 'prepare-corpse', type: 'stat', label: "Prepare Corpse", val: 10 } ,
-               { key: 'spirit-combat',  type: 'stat', label: "Spirit Combat",  val: 35 } ,
-               { key: 'spirit-travel',  type: 'stat', label: "Spirit Travel",  val: 10 } ,
-               { key: 'worship-eurmal', type: 'stat', label: "Worship Eurmal", val: 20 } ] },
+      items: [ { key: 'meditate',       type: 'stat', label: "Meditate",       base: 0,  val: 0  } ,
+               { key: 'prepare-corpse', type: 'stat', label: "Prepare Corpse", base: 10, val: 0  } ,
+               { key: 'sense-assassin', type: 'stat', label: "Sense Assassin", base: 0,  val: 0  } ,
+               { key: 'sense-chaos',    type: 'stat', label: "Sense Chaos",    base: 0,  val: 0  } ,
+               { key: 'spirit-combat',  type: 'stat', label: "Spirit Combat",  base: 20, val: 0  } ,
+               { key: 'spirit-dance',   type: 'stat', label: "Spirit Dance",   base: 0,  val: 0  } ,
+               { key: 'spirit-lore',    type: 'stat', label: "Spirit Lore",    base: 0,  val: 0  } ,
+               { key: 'spirit-travel',  type: 'stat', label: "Spirit Travel",  base: 10, val: 0  } ] },
     { group: 'communication',
       label: 'Communication',
       draw: true,
       bonus: 0,
+      extend: 'skill',
       modifier: { primary: ['cha'], secondary: ['int','pow'], penalty: [] },
-      items: [ { key: 'act',             type: 'stat', label: "Act",                 val: 5  } ,
-               { key: 'art',             type: 'stat', label: "Art",                 val: 5  } ,
-               { key: 'bargain',         type: 'stat', label: "Bargain",             val: 20 } ,
-               { key: 'charm',           type: 'stat', label: "Charm",               val: 50 } ,
-               { key: 'dance',           type: 'stat', label: "Dance",               val: 20 },
-               { key: 'disguise',        type: 'stat', label: "Disguise",            val: 35 },
-               { key: 'fasttalk',        type: 'stat', label: "Fast Talk",           val: 95 },
-               { key: 'intimidate',      type: 'stat', label: "Intimidate",          val: 15 },
-               { key: 'intrigue',        type: 'stat', label: "Intrigue",            val: 10 },
-               { key: 'orate',           type: 'stat', label: "Orate",               val: 10 },
-               { key: 'sing',            type: 'stat', label: "Sing",                val: 15 },
-               { key: 'speak.tradetalk', type: 'stat', label: "Speak Tradetalk",     val: 10 } ,
-               { key: 'speak.own',       type: 'stat', label: "Speak Own (Esrolian)", val: 50 } ] },
+      items: [ { key: 'act',             type: 'stat', label: "Act",             base: 5,  val: 0  } ,
+               { key: 'art',             type: 'stat', label: "Art",             base: 5,  val: 0  } ,
+               { key: 'bargain',         type: 'stat', label: "Bargain",         base: 5,  val: 0  } ,
+               { key: 'charm',           type: 'stat', label: "Charm",           base: 15, val: 0 } ,
+               { key: 'dance',           type: 'stat', label: "Dance",           base: 10, val: 0 },
+               { key: 'disguise',        type: 'stat', label: "Disguise",        base: 5,  val: 0 },
+               { key: 'fasttalk',        type: 'stat', label: "Fast Talk",       base: 5,  val: 0 },
+               { key: 'intimidate',      type: 'stat', label: "Intimidate",      base: 15, val: 0 },
+               { key: 'intrigue',        type: 'stat', label: "Intrigue",        base: 5,  val: 0 },
+               { key: 'orate',           type: 'stat', label: "Orate",           base: 10, val: 0 },
+               { key: 'sing',            type: 'stat', label: "Sing",            base: 10, val: 0 },
+               { key: 'speak.tradetalk', type: 'stat', label: "Speak Tradetalk", base: 0,  val: 0 } ,
+               { key: 'speak.own',       type: 'stat', label: "Speak Own",       base: 50, val: 0 } ] },
     { group: 'knowledge',
       label: 'Knowledge',
       draw: true,
       bonus: 0,
+      extend: 'skill',
       modifier: { primary: ['int'], secondary: ['pow'] },
-      items: [ { key: 'battle',           type: 'stat', label: "Battle",             val: 30 } ,
-               { key: 'celestial',        type: 'stat', label: "Celestial Lore",     val: 5  } ,
-               { key: 'cult-lore.eurmal', type: 'stat', label: "Cult Lore (Eurmal)", val: 20 } ,
-               { key: 'customs.esrolian', type: 'stat', label: "Customs (Esrolian)", val: 50 } ,
-               { key: 'elder-race-lore',  type: 'stat', label: "Elder Race Lore",    val: 5  } ,
-               { key: 'evaluate',         type: 'stat', label: "Evaluate",           val: 10 } ,
-               { key: 'farm',             type: 'stat', label: "Farm",               val: 35 } ,
-               { key: 'first-aid',        type: 'stat', label: "First Aid",          val: 15 } ,
-               { key: 'game',             type: 'stat', label: "Game",               val: 15 } ,
-               { key: 'herd',             type: 'stat', label: "Herd",               val: 5  } ,
-               { key: 'homeland-lore',    type: 'stat', label: "Homeland Lore",      val: 30 } ,
-               { key: 'manage-household', type: 'stat', label: "Manage Household",   val: 10 } ,
-               { key: 'mineral-lore',     type: 'stat', label: "Mineral Lore",       val: 5  } ,
-               { key: 'peaceful-cut',     type: 'stat', label: "Peaceful Cut",       val: 10 } ,
-               { key: 'plant-lore',       type: 'stat', label: "Plant Lore",         val: 5  } ,
-               { key: 'survival',         type: 'stat', label: "Survival",           val: 15 } ,
-               { key: 'treat-disease',    type: 'stat', label: "Treat Disease",      val: 5  } ,
-               { key: 'treat-poison',     type: 'stat', label: "Treat Poison",       val: 5  } ] },
+      items: [ { key: 'battle',           type: 'stat', label: "Battle",           base: 10, val: 0 } ,
+               { key: 'customs.own',      type: 'stat', label: "Customs (Own)",    base: 25, val: 0 } ,
+               { key: 'evaluate',         type: 'stat', label: "Evaluate",         base: 5,  val: 0 } ,
+               { key: 'farm',             type: 'stat', label: "Farm",             base: 5,  val: 0 } ,
+               { key: 'first-aid',        type: 'stat', label: "First Aid",        base: 10, val: 0 } ,
+               { key: 'game',             type: 'stat', label: "Game",             base: 15, val: 0 } ,
+               { key: 'herd',             type: 'stat', label: "Herd",             base: 5,  val: 0 } ,
+               { key: 'manage-household', type: 'stat', label: "Manage Household", base: 10, val: 0 } ,
+               { key: 'peaceful-cut',     type: 'stat', label: "Peaceful Cut",     base: 10, val: 0 } ,
+               { key: 'survival',         type: 'stat', label: "Survival",         base: 15, val: 0 } ,
+               { key: 'treat-disease',    type: 'stat', label: "Treat Disease",    base: 5,  val: 0 } ,
+               { key: 'treat-poison',     type: 'stat', label: "Treat Poison",     base: 5,  val: 0 } ] },
+    { group: 'lore',
+      label: 'Lore',
+      draw: true,
+      bonus: 0,
+      extend: 'skill',
+      modifier: { inherit: 'knowledge' },
+      items: [ { key: 'animal',      type: 'stat', label: "Animal Lore",      base: 5,  val: 0  } ,
+               { key: 'celestial',   type: 'stat', label: "Celestial Lore",   base: 5,  val: 0  } ,
+               { key: 'draconic',    type: 'stat', label: "Draconic Lore",    base: 0,  val: 0  } ,
+               { key: 'elder-race',  type: 'stat', label: "Elder Race Lore",  base: 5,  val: 0  } ,
+               { key: 'homeland',    type: 'stat', label: "Homeland Lore",    base: 30, val: 0  } ,
+               { key: 'mineral',     type: 'stat', label: "Mineral Lore",     base: 5,  val: 0  } ,
+               { key: 'plant',       type: 'stat', label: "Plant Lore",       base: 5,  val: 0  } ,
+               { key: 'river',       type: 'stat', label: "River Lore",       base: 0,  val: 0  } ,
+               { key: 'underworld',  type: 'stat', label: "Underworld Lore",  base: 0,  val: 0  } ] },
     { group: 'manipulation',
       label: 'Manipulation',
       draw: true,
       bonus: 0,
+      extend: 'skill',
       modifier: { primary: ['dex','int'], secondary: ['str','pow'] },
-      items: [ { key: 'conceal',         type: 'stat', label: "Conceal",         val: 5  } ,
-               { key: 'craft',           type: 'stat', label: "Craft",           val: 10 } ,
-               { key: 'devise',          type: 'stat', label: "Devise",          val: 15 } ,
-               { key: 'play-instrument', type: 'stat', label: "Play Instrument", val: 5  } ,
-               { key: 'sleight',         type: 'stat', label: "Sleight",         val: 35 } ] },
+      items: [ { key: 'conceal',         type: 'stat', label: "Conceal",         base: 5,  val: 0  } ,
+               { key: 'craft',           type: 'stat', label: "Craft",           base: 10, val: 0  } ,
+               { key: 'devise',          type: 'stat', label: "Devise",          base: 5,  val: 15 } ,
+               { key: 'play-instrument', type: 'stat', label: "Play Instrument", base: 5, val:  5  } ,
+               { key: 'sleight',         type: 'stat', label: "Sleight",         base: 5, val:  0  } ] },
     { group: 'perception',
       label: 'Perception',
       draw: true,
       bonus: 0,
+      extend: 'skill',
       modifier: { primary: ['int'], secondary: ['pow'] },
-      items: [ { key: 'insight', type: 'stat', label: "Insight (Own Species)", val: 20 } ,
-               { key: 'listen',  type: 'stat', label: "Listen",  val: 35 } ,
-               { key: 'scan',    type: 'stat', label: "Scan",    val: 25 } ,
-               { key: 'search',  type: 'stat', label: "Search",  val: 50 } ,
-               { key: 'track',   type: 'stat', label: "Track",   val: 5  } ] },
+      items: [ { key: 'insight', type: 'stat', label: "Insight (Own Species)", base: 20, val: 0 } ,
+               { key: 'listen',  type: 'stat', label: "Listen",  base: 25, val: 0 } ,
+               { key: 'scan',    type: 'stat', label: "Scan",    base: 25, val: 0 } ,
+               { key: 'search',  type: 'stat', label: "Search",  base: 25, val: 0 } ,
+               { key: 'track',   type: 'stat', label: "Track",   base: 5,  val: 0 } ] },
     { group: 'stealth',
       label: 'Stealth',
       draw: true,
       bonus: 0,
+      extend: 'skill',
       modifier: { primary: ['dex','int'], secondary: ['pow'], disability: ['siz'] },
-      items: [ { key: 'hide',         type: 'stat', label: "Hide",         val: 45 } ,
-               { key: 'move-quietly', type: 'stat', label: "Move Quietly", val: 65 } ] },
+      items: [ { key: 'hide',         type: 'stat', label: "Hide",         base: 10, val: 0 } ,
+               { key: 'move-quietly', type: 'stat', label: "Move Quietly", base: 10, val: 0 } ] },
     { group: 'melee',
       label: 'Melee Weapons',
       draw: true,
       bonus: 0,
+      extend: 'weapon',
       modifier: { inherit: 'manipulation' },
-      items: [ { key: '1-handed axe',     type: 'stat', label: "Axe (1✋)",        val: 25 } ,
-               { key: '2-handed axe',     type: 'stat', label: "Axe (2✋)",        val:  5 } ,
-               { key: 'broadsword',       type: 'stat', label: "Broadsword",       val: 10 } ,
-               { key: 'dagger',           type: 'stat', label: "Dagger",           val: 15 } ,
-               { key: 'kopis',            type: 'stat', label: "Kopis",            val: 10 } ,
-               { key: '1-handed mace',    type: 'stat', label: "Mace (1✋)",       val: 15 } ,
-               { key: '1-handed spear',   type: 'stat', label: "Spear (2✋)",      val: 15 } ,
-               { key: 'pike',             type: 'stat', label: "Pike",             val: 15 } ,
-               { key: 'rapier',           type: 'stat', label: "Rapier",           val: 55 } ,
-               { key: 'two-handed spear', type: 'stat', label: "Spear (2✋)",      val: 15 } ] },
+      items: [ { key: '1-handed axe',     type: 'stat', label: "Small Axe (1✋)",  base: 10, val: 0 } ,
+               { key: '2-handed axe',     type: 'stat', label: "Battle Axe (2✋)", base:  5, val: 0 } ,
+               { key: 'broadsword',       type: 'stat', label: "Broadsword",       base: 10, val: 0 } ,
+               { key: 'dagger',           type: 'stat', label: "Dagger",           base: 15, val: 0 } ,
+               { key: 'kopis',            type: 'stat', label: "Kopis",            base: 10, val: 0 } ,
+               { key: '1-handed mace',    type: 'stat', label: "Mace (1✋)",       base: 15, val: 0 } ,
+               { key: '1-handed spear',   type: 'stat', label: "Spear (1✋)",      base:  5, val: 0 } ,
+               { key: 'pike',             type: 'stat', label: "Pike",             base: 15, val: 0 } ,
+               { key: 'rapier',           type: 'stat', label: "Rapier",           base: 10, val: 0 } ,
+               { key: '2-handed spear',   type: 'stat', label: "Spear (2✋)",      base: 15, val: 0 } ] },
     { group: 'missile',
       label: 'Missile Weapons',
       draw: true,
       bonus: 0,
+      extend: 'weapon',
       modifier: { inherit: 'manipulation' },
-      items: [ { key: 'composite-bow',   type: 'stat', label: "Composite Bow",   val:  5 } ,
-               { key: 'javelin',         type: 'stat', label: "Javelin",         val: 10 } ,
-               { key: 'pole-lasso',      type: 'stat', label: "Pole Lasso",      val:  5 } ,
-               { key: 'self-bow',        type: 'stat', label: "Self Bow",        val: 15 } ,
-               { key: 'sling',           type: 'stat', label: "Sling",           val:  5 } ,
-               { key: 'throwing-dagger', type: 'stat', label: "Throwing Dagger", val:  5 } ,
-               { key: 'thrown-axe',      type: 'stat', label: "Thrown Axe",      val: 20 } ] },
+      items: [ { key: 'composite-bow',   type: 'stat', label: "Composite Bow",   base:  5, val:  0 } ,
+               { key: 'javelin',         type: 'stat', label: "Javelin",         base: 10, val:  0 } ,
+               { key: 'pole-lasso',      type: 'stat', label: "Pole Lasso",      base:  5, val:  0 } ,
+               { key: 'self-bow',        type: 'stat', label: "Self Bow",        base: 15, val:  0 } ,
+               { key: 'sling',           type: 'stat', label: "Sling",           base:  5, val:  0 } ,
+               { key: 'throwing-dagger', type: 'stat', label: "Throwing Dagger", base:  5, val:  0 } ,
+               { key: 'thrown-axe',      type: 'stat', label: "Thrown Axe",      base: 10, val:  0 } ] },
     { group: 'shield',
       label: 'Shields',
       draw: true,
       bonus: 0,
+      extend: 'shield',
       modifier: { inherit: 'manipulation' },
-      items: [ { key: 'large-shield',  type: 'stat', label: "Large Shield",  val: 25 } ,
-               { key: 'medium-shield', type: 'stat', label: "Medium Shield", val: 30 } ,
-               { key: 'small-shield',  type: 'stat', label: "Small Shield",  val: 30 } ] },
+      items: [ { key: 'large-shield',  type: 'stat', label: "Large Shield",  base: 15, val: 0 } ,
+               { key: 'medium-shield', type: 'stat', label: "Medium Shield", base: 15, val: 0 } ,
+               { key: 'small-shield',  type: 'stat', label: "Small Shield",  base: 15, val: 0 } ] },
     { group: 'unarmed',
       label: 'Natural Weapons',
       draw: true,
       bonus: 0,
+      extend: 'weapon',
       modifier: { inherit: 'manipulation' },
-      items: [ { key: 'fist',    type: 'stat', label: "Fist",    val:  5 } ,
-               { key: 'grapple', type: 'stat', label: "Grapple", val: 10 } ,
-               { key: 'kick',    type: 'stat', label: "Kick",    val: 10 } ] },
+      items: [ { key: 'fist',    type: 'stat', label: "Fist",    base:  5, val: 0 } ,
+               { key: 'grapple', type: 'stat', label: "Grapple", base: 10, val: 0 } ,
+               { key: 'kick',    type: 'stat', label: "Kick",    base: 10, val: 0 } ] },
 ];
+
+// =========================================================================
+// utilities
 
 const ucfre = /\b([a-z])/g;
 function ucfirst (s)
@@ -270,25 +324,30 @@ function xpath (path, context, type)
     return result;
 }
 
-function editclass (node)
+function element (x)
 {
-    var nc = ' ' + node.getAttribute('class') + ' ';
-    for( const c of ["text", "uint", "int", "blob", "dice"] )
-        if( nc.indexOf( ' ' + c + ' ') >= 0 )
-            return c;
+    var el = document.createElement( x );
 
-    return false;
+    for( var i = 1; i < arguments.length; i+= 2 )
+        el.setAttribute( arguments[ i ], arguments[ i+1 ] );
+
+    return el;
 }
 
-function updateclass (node)
+function div ()
 {
-    var nc = ' ' + node.getAttribute('class') + ' ';
-    for( const c of ['skill', 'attr', 'prune', 'pinfo', 'hit'] )
-        if( nc.indexOf( ' ' + c + ' ') >= 0 )
-            return c;
+    if( arguments.length )
+    {
+        var arg = Array.prototype.slice.call( arguments );
+        arg.unshift( 'div' );
+        return element.apply( this, arg );
+    }
 
-    return false;
+    return element( 'div' );
 }
+
+// ===================================================================================
+// input handling
 
 function eventstr (e)
 {
@@ -337,6 +396,96 @@ function suppress_input (e)
             e.preventDefault();
 }
 
+function handle_edit_event (e)
+{
+    var uc  = updateclass( this );
+    var id  = this.getAttribute( 'id' );
+    var cat = split_id( id )[ 0 ];
+    if( cat == 'personal-info' )
+        uc = 'pinfo';
+    
+    if( !uc )
+        return;
+
+    var name;
+    var val = this.textContent;
+
+    if ( !id || ( id == "") )
+        return;
+    
+    switch( uc )
+    {
+      case 'prune':
+          name = split_id( id )[ 1 ];
+          update_prune( name, val * 1 );
+          break;
+          
+      case 'pinfo':
+          localStorage.setItem( id, val );
+          break;
+          
+      case 'skill':
+      case 'attr':
+          update_item( id, val );
+          break;
+          
+      default:
+          return;
+    }
+}
+
+function do_something (e)
+{
+    var target = this.nextElementSibling;
+    var rtype  = editclass( target );
+    var atype  = updateclass( target );
+    var rnode  = document.getElementById( 'result' );
+
+    if( atype == 'prune' )
+        return roll_prune( rnode, this );
+
+    if( atype == 'hit' )
+        return roll_hit_location( rnode, this );
+    
+    if( rtype == 'dice' )
+        return roll_ndxseq( rnode, target.textContent );
+
+    if( atype == 'attr' )
+        if( rtype == 'uint' )
+            return setup_nx_roll( rnode, this, target.textContent );
+    
+    if( atype == 'skill' )
+        if( rtype == 'uint' )
+            return roll_d100( rnode,
+                              target.textContent * 1,
+                              this.parentNode.previousElementSibling.textContent + ':' );
+
+    rnode.textContent = 'What?';
+}
+
+// =========================================================================
+// accessors
+
+function editclass (node)
+{
+    var nc = ' ' + node.getAttribute('class') + ' ';
+    for( const c of ["text", "uint", "int", "blob", "dice"] )
+        if( nc.indexOf( ' ' + c + ' ') >= 0 )
+            return c;
+
+    return false;
+}
+
+function updateclass (node)
+{
+    var nc = ' ' + node.getAttribute('class') + ' ';
+    for( const c of ['pinfo', 'skill', 'attr', 'prune', 'hit'] )
+        if( nc.indexOf( ' ' + c + ' ') >= 0 )
+            return c;
+
+    return false;
+}
+
 function get_group (grp)
 {
     var id = grp.split('.');
@@ -357,6 +506,33 @@ function split_id (i)
     return [ grp, name ];
 }
 
+const basere = /^(\S+?\.\S+?)(?:\*(\d+))?$/;
+function entry_base (entry)
+{
+    var matched;
+
+    if( !entry )
+        return undefined;
+
+    if( !entry.base )
+        return 0;
+
+    if( !isNaN( entry.base ) )
+        return entry.base;
+
+    if( matched = entry.base.match( basere ) )
+    {
+        var stat   = matched[ 1 ];
+        var factor = matched[ 2 ] ? (matched[ 2 ] * 1) : 1;
+        var attr   = get_entry( stat );
+
+        if( attr )
+            return 1 * attr.val * factor;
+    }
+
+    return undefined;
+}
+
 function get_entry (ident)
 {
     var id    = split_id( ident );
@@ -373,6 +549,54 @@ function get_entry (ident)
 
     return null;
 }
+
+function group_modifier (g)
+{
+    var bonus = 0;
+    var stat;
+    var val;
+    var ancestor;
+    
+    if( !g.modifier )
+        return g.bonus;
+
+    if( g.modifier.inherit )
+        if( ancestor = get_group( g.modifier.inherit ) )
+            return group_modifier( ancestor );
+    
+    if( g.modifier.primary )
+        for( const s of g.modifier.primary )
+            if( stat = get_entry( 'stats.' + s ) )
+                bonus += (maths.ceil( (stat.val * 1) / 4 ) - 3) * 5;
+
+    if( g.modifier.disability )
+        for( const s of g.modifier.disability )
+            if( stat = get_entry( 'stats.' + s ) )
+                bonus -= (maths.ceil( (stat.val * 1) / 4 ) - 3) * 5;
+
+    if( g.modifier.secondary )
+        for( const s of g.modifier.secondary )
+            if( stat = get_entry( 'stats.' + s ) )
+                if( val = stat.val * 1 )
+                    bonus += ( (val <=  4) ? -5 :
+                               (val <= 16) ?  0 :
+                               maths.ceil( (val - 16) / 4 ) * 5 );
+
+    if( g.modifier.penalty )
+        for( const s of g.modifier.penalty )
+            if( stat = get_entry( 'stats.' + s ) )
+                if( val = stat.val * 1 )
+                    bonus -= ( (val <=  4) ? -5 :
+                               (val <= 16) ?  0 :
+                               maths.ceil( (val - 16) / 4 ) * 5 );
+
+
+    
+    return bonus;
+}
+
+// =========================================================================
+// cache update mechanisms
 
 function _update_prune (p,i,val)
 {
@@ -431,11 +655,26 @@ function update_item (i,v,norecurse)
         {
             var group = get_group( i );
             if( !isNaN(v) )
-                item.val = v - (group.bonus ? group.bonus : 0);
+            {
+                if( v == 0 )
+                {
+                    item.val = 0;
+                }
+                else // nonzero skills have modifiers removed before storage:
+                {
+                    var bonus = group.bonus ? group.bonus : 0;
+                    var base  = entry_base( item );
+                    item.val  = v - (bonus + base);
+                }
+            }
             else
+            {
                 item.val = v;
+            }
+
             var nv = JSON.stringify( item );
-            localStorage.setItem( i, nv );
+            if( nv )
+                localStorage.setItem( i, nv );
         }
 
         if( norecurse )
@@ -483,40 +722,8 @@ function update_item (i,v,norecurse)
     }
 }
 
-function handle_edit_event (e)
-{
-    var uc = updateclass( this );
-
-    if( !uc )
-        return;
-
-    var name;
-    var id  = this.getAttribute( 'id' );
-    var val = this.textContent;
-
-    if ( !id || ( id == "") )
-        return;
-    
-    switch( uc )
-    {
-      case 'prune':
-          name = split_id( id )[ 1 ];
-          update_prune( name, val * 1 );
-          break;
-          
-      case 'pinfo':
-          localStorage.setItem( id, val );
-          break;
-          
-      case 'skill':
-      case 'attr':
-          update_item( id, val );
-          break;
-          
-      default:
-          return;
-    }
-}
+// ===================================================================================
+// UI rendering
 
 function _make_stat_value(dl, data, bonus, subtype)
 {
@@ -526,6 +733,7 @@ function _make_stat_value(dl, data, bonus, subtype)
     var val  = data.val;
     var sval = document.createElement( 'span' );
     var sbtn = document.createElement( 'span' );    
+    var base = entry_base( data );
     
     switch( data.type )
     {
@@ -543,8 +751,12 @@ function _make_stat_value(dl, data, bonus, subtype)
           cssc += 'text';
     } 
 
-    if( !isNaN( bonus ) )
-        val += bonus;
+    // bonus is only added if either:
+    // a) base is nonzero (ie skill has a nonzero default)
+    // b) skill is already nonzero (learned skill)
+    if( (base + val) > 0 )
+        if( !isNaN( bonus ) )
+            val += bonus + base;
 
     sval.setAttribute( 'id', id );
     sval.setAttribute( 'class', cssc );
@@ -682,6 +894,189 @@ function make_item (dl, data, width, bonus)
           break;
     }
 }
+
+function add_stat_groups ()
+{
+    var new_groups = [];
+
+    for( const g of groups )
+    {
+        if( !g.draw ) // this group is pre-rendered in the html
+        {
+            var cid = g.group + '-container';
+            var grp = document.getElementById( cid );
+            if( !grp )
+                continue;
+
+            for( const si of g.items )
+            {
+                var sid = g.group + '.' + si.key;
+                var sel = document.getElementById( sid );
+                if( sel )
+                    sel.textContent = si.val;
+            }
+
+            // remove the prerendered item from wherever it was
+            // on the page. It will be added back in the order
+            // of the entries in groups:
+            grp.parentNode.removeChild( grp );
+            new_groups.push( grp );
+            continue;
+        }
+        
+        var grp = document.createElement( 'div' );
+        grp.setAttribute( 'id', g.group + '-container' );
+        grp.setAttribute( 'class', 'group' );
+
+        if( g.modifier )
+            g.bonus = group_modifier( g );
+
+        var title = document.createElement( 'h3' );
+        title.textContent = group_title( g );
+        title.setAttribute( 'id', g.group + '-title' );
+        // var tdiv  = document.createElement( 'div' );
+        // tdiv.setAttribute( 'class', 'group-title' );
+        // tdiv.appendChild( title );
+
+        var add;
+        var template;
+        if( template = extn_template[ g.extend ] )
+        {
+            if( template.draw && template.save )
+            {
+                var func = template.draw;
+                var handler =
+                    function () { func( g.group, g.extend ) };
+                add = document.createElement( 'div' );
+                add.setAttribute( 'id', g.group + '.new-item' );
+                add.setAttribute( 'class', 'new-item' );
+                add.addEventListener( 'click', handler );
+                add.textContent = '➕';
+            }
+        }
+        
+        var lst = document.createElement( 'dl' );
+        lst.setAttribute( 'id', g.group )
+
+        var j = 0;
+        var width = 0;
+        for( const i of g.items ) { j++; width += item_label( i ).length; }
+        width = width ? (maths.round( (width / j) / 1.02 ) + "em") : "1em";
+
+        for( const i of g.items )
+            make_item( lst, i, width, g.bonus ? g.bonus : 0 );
+
+        new_groups.push( grp );
+        if( add )
+            grp.appendChild( add );
+        grp.appendChild( title );
+        grp.appendChild( lst );
+    }
+
+    var banner = document.getElementById( 'groups' );
+    
+    for( const i of new_groups )
+        banner.appendChild( i );
+}
+
+function group_title(g)
+{
+    var ttext = g.label;
+
+    if( g.bonus != undefined )
+        ttext += ' (' + ((g.bonus >= 0) ? '+' : '') + (g.bonus * 1) + ')';
+
+    return ttext;
+}
+
+function refresh_group (g)
+{
+    if( !g || !g.modifier )
+        return;
+
+    var new_bonus = group_modifier( g );
+    
+    if( g.bonus == new_bonus )
+        return
+
+    g.bonus = new_bonus;
+
+    var title = document.getElementById( g.group + '-title' );
+    if( title )
+        title.textContent = group_title( g );
+    
+    var inode;
+    for( const i of g.items )
+        if( inode = document.getElementById( g.group + '.' + i.key ) )
+            inode.textContent = '' + (g.bonus + (i.val * 1));
+}
+
+
+// =========================================================================
+// UI for new skills/runes etc
+
+function field_widget (f)
+{
+    var label  = div( 'class', 'new-item-field-label'  );
+    var widget = div( 'class', 'new-item-field-widget' );
+
+    label.textContent  = ucfirst( f.name ) + ':';
+    widget.textContent = f.type + ' widget here';
+    
+    return [ label, widget ];
+}
+
+function draw_skill_input_form (grp, type)
+{
+    dismiss_input_forms();
+
+    var template = extn_template[ type ];
+    var group = get_group( grp );
+    
+    if( !template || !group )
+        return;
+    
+    var form = div( 'id'   , grp + '.new.' + type + '.form',
+                    'class', 'new-item-form' );
+
+    var label = div( 'class', 'new-item-form-title' );
+    label.textContent = group.label  + ' ► ' + ucfirst( type );
+    form.appendChild( label );
+
+    for( const f of template.fields )
+        for( const i of field_widget( f ) )
+            form.appendChild( i );
+    
+    document.body.appendChild( form );
+}
+
+// =========================================================================
+// Handle input from new-skill-etc forms
+
+function dismiss_input_forms ()
+{
+    var forms = document.getElementsByClassName( 'new-item-form' );
+
+    if( !forms )
+        return;
+
+    for( const f of forms )
+        f.parentNode && f.parentNode.removeChild( f );
+}
+
+function dismiss_this_form ()
+{
+    if( this && this.parentNode )
+        this.parentNode.removeChild( this );
+}
+
+function add_new_skill (form_data)
+{
+
+}
+
+// =========================================================================
+// derived stat calculations
 
 function calc_enc ()
 {
@@ -824,6 +1219,9 @@ function calc_max_hp ()
     }
 }
 
+// =========================================================================
+// hitpoint calculations
+
 const hits = { legl: [0,1,1,1,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6,7,7,7] ,
                legr: [0,1,1,1,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6,7,7,7] ,
                arml: [0,1,1,1,2,2,2,3,3,3,3,3,3,4,4,4,5,5,5,6,6,6] ,
@@ -884,199 +1282,18 @@ function reset_hitpoints (e)
         update_item( 'hitpoints.total.cur', hp, true );
 }
 
-function group_modifier (g)
-{
-    var bonus = 0;
-    var stat;
-    var val;
-    var ancestor;
-    
-    if( !g.modifier )
-        return g.bonus;
-
-    if( g.modifier.inherit )
-        if( ancestor = get_group( g.modifier.inherit ) )
-            return group_modifier( ancestor );
-    
-    if( g.modifier.primary )
-        for( const s of g.modifier.primary )
-            if( stat = get_entry( 'stats.' + s ) )
-                bonus += (maths.ceil( (stat.val * 1) / 4 ) - 3) * 5;
-
-    if( g.modifier.disability )
-        for( const s of g.modifier.disability )
-            if( stat = get_entry( 'stats.' + s ) )
-                bonus -= (maths.ceil( (stat.val * 1) / 4 ) - 3) * 5;
-
-    if( g.modifier.secondary )
-        for( const s of g.modifier.secondary )
-            if( stat = get_entry( 'stats.' + s ) )
-                if( val = stat.val * 1 )
-                    bonus += ( (val <=  4) ? -5 :
-                               (val <= 16) ?  0 :
-                               maths.ceil( (val - 16) / 4 ) * 5 );
-
-    if( g.modifier.penalty )
-        for( const s of g.modifier.penalty )
-            if( stat = get_entry( 'stats.' + s ) )
-                if( val = stat.val * 1 )
-                    bonus -= ( (val <=  4) ? -5 :
-                               (val <= 16) ?  0 :
-                               maths.ceil( (val - 16) / 4 ) * 5 );
-
-
-    
-    return bonus;
-}
-
-function add_stat_groups ()
-{
-    var new_groups = [];
-
-    for( const g of groups )
-    {
-        if( !g.draw ) // this groups is pre-rendered in the html
-         {
-            var cid = g.group + '-container';
-            var grp = document.getElementById( cid );
-            if( !grp )
-                continue;
-
-            for( const si of g.items )
-            {
-                var sid = g.group + '.' + si.key;
-                var sel = document.getElementById( sid );
-                if( sel )
-                    sel.textContent = si.val;
-            }
-
-            // remove the prerendered item from wherever it was
-            // on the page. It will be added back in the order
-            // of the entries in groups:
-            grp.parentNode.removeChild( grp );
-            new_groups.push( grp );
-            continue;
-        }
-        
-        var grp = document.createElement( 'div' );
-        grp.setAttribute( 'id', g.group + '-container' );
-        grp.setAttribute( 'class', 'group' );
-
-        if( g.modifier )
-            g.bonus = group_modifier( g );
-
-        var title = document.createElement( 'h3' );
-        title.textContent = group_title( g );
-        title.setAttribute( 'id', g.group + '-title' );
-
-        var lst = document.createElement( 'dl' );
-        lst.setAttribute( 'id', g.group )
-
-        var j = 0;
-        var width = 0;
-        for( const i of g.items ) { j++; width += item_label( i ).length; }
-        width = maths.round( (width / j) / 1.25 ) + "em";
-        
-        for( const i of g.items )
-            make_item( lst, i, width, g.bonus ? g.bonus : 0 );
-
-        new_groups.push( grp );
-        grp.appendChild( title );
-        grp.appendChild( lst );
-    }
-
-    var banner = document.getElementById( 'groups' );
-    
-    for( const i of new_groups )
-        banner.appendChild( i );
-}
-
-function group_title(g)
-{
-    var ttext = g.label;
-
-    if( g.bonus != undefined )
-        ttext += ' (' + ((g.bonus >= 0) ? '+' : '') + (g.bonus * 1) + ')';
-
-    return ttext;
-}
-
-function refresh_group (g)
-{
-    if( !g || !g.modifier )
-        return;
-
-    var new_bonus = group_modifier( g );
-    
-    if( g.bonus == new_bonus )
-        return
-
-    g.bonus = new_bonus;
-
-    var title = document.getElementById( g.group + '-title' );
-    if( title )
-        title.textContent = group_title( g );
-    
-    var inode;
-    for( const i of g.items )
-        if( inode = document.getElementById( g.group + '.' + i.key ) )
-            inode.textContent = '' + (g.bonus + (i.val * 1));
-}
-
-function load_group_data ()
-{
-    for( const s of Object.keys( localStorage ) )
-    {
-        var cur = get_entry( s );
-
-        if( cur && cur.noedit ) // non-editable element, ignore cached values
-            continue;
-        
-        const id = split_id( s );
-        var   nv = localStorage.getItem( s );
-        const group_name = id[ 0 ];
-        const entry_name = id[ 1 ];
-        var   group = get_group( group_name );
-        var   i = 0;
-        var   n = undefined;
-
-        if( !group      ) continue;
-        if( !entry_name ) continue;
-        if( !nv         ) continue;
-        //console.log( 'parse('+ nv +')');
-        nv = JSON.parse( nv );
-        if( !nv         ) continue;
-
-        for( i = 0; i < group.items.length && n == undefined; i++ )
-            if( group.items[i]['key'] == entry_name )
-                n = i;
-
-        if( n == undefined )
-            group.items.push( nv );
-        else
-            group.items[ n ] = nv;
-    }
-}
-
-function clear_element (e,text)
-{
-    var c;
-    while( c = e.firstChild )
-        e.removeChild( c );
-    e.textContent = '';
-
-    if( !text  )
-        return;
-
-    var txt = document.createElement( 'div' );
-    txt.setAttribute( 'class', 'rlabel' );
-    txt.textContent = text;
-    e.appendChild( txt );
-    return;
-}
+// =========================================================================
+// roll them bones
 
 function roll_d100 (result, skill, prefix)
 {
+    if( isNaN( skill ) || (skill <= 0) )
+    {
+        if( result )
+            result.textContent = (prefix ? prefix + " " : '') + 'Unavailable';
+        
+        return [ undefined, 'UNAVAILABLE' ];
+    }
     var rolled = maths.floor( maths.random() * 100 ) + 1;
     var crit   = maths.round( skill / 20 );
     var spec   = maths.round( skill / 5  );
@@ -1176,6 +1393,10 @@ function roll_nx (e)
     var multi = found[1] * 1;
     var text  = label ? label.textContent : '';
 
+    if( multi > 1 )
+        if( text = text.replace( /:\s*/, '' ) )
+            text += '×' + multi + ': ';
+    
     if( attr && panel )
         return roll_d100( panel, stat * multi, text );
 
@@ -1330,7 +1551,7 @@ function roll_hit_location (panel, node)
     }
 
     clear_element( panel, '🎲' );
-    type = type == 'melee' ? 'Melée' : ucfirst( type );
+    type = type == 'melee' ? 'Mêlée' : ucfirst( type );
 
     if( name )
         panel.textContent = 'Hit (' + type + ') ' + loc + ' = ' + name;
@@ -1340,33 +1561,58 @@ function roll_hit_location (panel, node)
     return loc;
 }
 
-function do_something (e)
+// =========================================================================
+
+function load_group_data ()
 {
-    var target = this.nextElementSibling;
-    var rtype  = editclass( target );
-    var atype  = updateclass( target );
-    var rnode  = document.getElementById( 'result' );
+    for( const s of Object.keys( localStorage ) )
+    {
+        var cur = get_entry( s );
 
-    if( atype == 'prune' )
-        return roll_prune( rnode, this );
+        if( cur && cur.noedit ) // non-editable element, ignore cached values
+            continue;
+        
+        const id = split_id( s );
+        var   nv = localStorage.getItem( s );
+        const group_name = id[ 0 ];
+        const entry_name = id[ 1 ];
+        var   group = get_group( group_name );
+        var   i = 0;
+        var   n = undefined;
 
-    if( atype == 'hit' )
-        return roll_hit_location( rnode, this );
-    
-    if( rtype == 'dice' )
-        return roll_ndxseq( rnode, target.textContent );
+        if( !group      ) continue;
+        if( !entry_name ) continue;
+        if( !nv         ) continue;
+        //console.log( 'parse('+ nv +')');
+        nv = JSON.parse( nv );
+        if( !nv         ) continue;
 
-    if( atype == 'attr' )
-        if( rtype == 'uint' )
-            return setup_nx_roll( rnode, this, target.textContent );
-    
-    if( atype == 'skill' )
-        if( rtype == 'uint' )
-            return roll_d100( rnode,
-                              target.textContent * 1,
-                              this.parentNode.previousElementSibling.textContent + ':' );
+        for( i = 0; i < group.items.length && n == undefined; i++ )
+            if( group.items[i]['key'] == entry_name )
+                n = i;
 
-    rnode.textContent = 'What?';
+        if( n == undefined )
+            group.items.push( nv );
+        else
+            group.items[ n ] = nv;
+    }
+}
+
+function clear_element (e,text)
+{
+    var c;
+    while( c = e.firstChild )
+        e.removeChild( c );
+    e.textContent = '';
+
+    if( !text  )
+        return;
+
+    var txt = document.createElement( 'div' );
+    txt.setAttribute( 'class', 'rlabel' );
+    txt.textContent = text;
+    e.appendChild( txt );
+    return;
 }
 
 function initialise ()
