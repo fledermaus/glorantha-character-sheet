@@ -58,9 +58,9 @@ var extn_template =
 {
     skill:   { save:   add_new_skill,
                draw:   draw_skill_input_form,
-               fields: [ { name: 'label', type: 'text' } ,
+               fields: [ { name: 'skill', type: 'text' } ,
                          { name: 'base',  type: 'base' } ,
-                         { name: 'skill', type: 'uint' } ] },
+                         { name: 'level', type: 'uint' } ] },
     // emotion: { save:   add_new_emotion,
     //            draw:   draw_emotion_input_form,
     //            fields: [ { name: 'type',
