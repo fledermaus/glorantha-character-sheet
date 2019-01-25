@@ -1068,8 +1068,14 @@ function dismiss_input_forms ()
 
 function dismiss_this_form ()
 {
-    if( this && this.parentNode )
-        this.parentNode.removeChild( this );
+    var button = this;
+    var parent;
+    var ancestor;
+
+    if( button )
+        if( parent = button.parentElement )
+            if( ancestor = parent.parentElement )
+                ancestor.removeChild( parent );
 }
 
 function add_new_skill (form_data)
