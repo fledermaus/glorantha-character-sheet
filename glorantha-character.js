@@ -729,12 +729,12 @@ function update_item (i,v,norecurse)
 
 function _make_stat_value(dl, data, bonus, subtype)
 {
-    var dd   = document.createElement( 'dd' );
+    var dd   = element( 'dd' );
     var cssc = (data.noedit ? '' : 'editable ') + subtype + ' ';
     var id   = dl.getAttribute( 'id' ) + '.' + data.key;
     var val  = data.val;
-    var sval = document.createElement( 'span' );
-    var sbtn = document.createElement( 'span' );    
+    var sval = element( 'span' );
+    var sbtn = element( 'span' );
     var base = entry_base( data );
     
     switch( data.type )
@@ -797,10 +797,8 @@ function make_attr_value (dl, data, bonus)
 
 function make_paired_roll_button (id, rune)
 {
-    var btn  = document.createElement( 'div' );
+    var btn  = div( 'class', 'roll', 'id', 'invoke.' + id + rune );
 
-    btn.setAttribute( 'class', 'roll' );
-    btn.setAttribute( 'id'   , 'invoke.' + id + rune );
     if( rune_glyph[ rune ] )
         btn.textContent = rune_glyph[ rune ] + '  ';
     else
@@ -814,11 +812,11 @@ function make_paired_roll_button (id, rune)
 
 function make_paired_value (dl, data)
 {
-    var d0   = document.createElement( 'dd'   );
-    var s0v  = document.createElement( 'span' );
+    var d0   = element( 'dd'   );
+    var s0v  = element( 'span' );
 
-    var d1   = document.createElement( 'dd'   );
-    var s1v  = document.createElement( 'span' );
+    var d1   = element( 'dd'   );
+    var s1v  = element( 'span' );
 
     var cssc = 'editable uint prune';
     var v0   = data.val;
@@ -868,7 +866,7 @@ function item_label (data)
 
 function make_item (dl, data, width, bonus)
 {
-    var dt = document.createElement( 'dt' );
+    var dt = element( 'dt' );
     var label = item_label( data );
 
     dt.style.width = width;
@@ -926,16 +924,13 @@ function add_stat_groups ()
             continue;
         }
         
-        var grp = document.createElement( 'div' );
-        grp.setAttribute( 'id', g.group + '-container' );
-        grp.setAttribute( 'class', 'group' );
+        var grp = div( 'id', g.group + '-container', 'class', 'group' );
 
         if( g.modifier )
             g.bonus = group_modifier( g );
 
-        var title = document.createElement( 'h3' );
+        var title = element( 'h3', 'id', g.group + '-title' );
         title.textContent = group_title( g );
-        title.setAttribute( 'id', g.group + '-title' );
         // var tdiv  = document.createElement( 'div' );
         // tdiv.setAttribute( 'class', 'group-title' );
         // tdiv.appendChild( title );
@@ -949,17 +944,13 @@ function add_stat_groups ()
                 var func = template.draw;
                 var handler =
                     function () { func( g.group, g.extend ) };
-                add = document.createElement( 'div' );
-                add.setAttribute( 'id', g.group + '.new-item' );
-                add.setAttribute( 'class', 'new-item' );
+                add = div( 'id', g.group + '.new-item', 'class', 'new-item' );
                 add.addEventListener( 'click', handler );
                 add.textContent = '➕';
             }
         }
         
-        var lst = document.createElement( 'dl' );
-        lst.setAttribute( 'id', g.group )
-
+        var lst = element( 'dl', 'id', g.group );
         var j = 0;
         var width = 0;
         for( const i of g.items ) { j++; width += item_label( i ).length; }
@@ -1505,36 +1496,29 @@ function roll_prune (panel, node)
 
 function setup_nx_roll (panel, node, attr)
 {
-    var opt_group = document.createElement( 'div' );
-    var att_div   = document.createElement( 'div' );
+    var opt_group = div( 'class', 'nxroll' );
+    var att_div   = div( 'id', 'nxvalue', 'class', 'rlabel' );
     var prev;
-    clear_element( panel, '🎲' );
 
+    clear_element( panel, '🎲' );
     att_div.textContent = '' +  attr
-    att_div.setAttribute( 'id', 'nxvalue' );
-    att_div.setAttribute( 'class', 'rlabel' );
-    
-    opt_group.setAttribute( 'class', 'nxroll' );
 
     if( node && node.parentNode )
         prev = node.parentNode.previousElementSibling;
     
     if( prev )
     {
-        var ldiv = document.createElement( 'div' );
+        var ldiv = div( 'id', 'rlabel', 'class', 'rlabel' );
         ldiv.textContent = prev.textContent + ':';
-        ldiv.setAttribute( 'class', 'rlabel' );
-        ldiv.setAttribute( 'id',    'rlabel' );
         opt_group.appendChild( ldiv );
     }
-    opt_group.appendChild( att_div );
 
+    opt_group.appendChild( att_div );
     panel.appendChild( opt_group );
 
     for( var x = 0; x < 5; x++ )
     {
-        var opt = document.createElement( 'div' );
-        opt.setAttribute( 'class', 'nxopt' );
+        var opt = div( 'class', 'nxopt' );
         opt.textContent = (x+1) + '×';
         opt.onclick = roll_nx;
         opt_group.appendChild( opt );
@@ -1691,8 +1675,7 @@ function clear_element (e,text)
     if( !text  )
         return;
 
-    var txt = document.createElement( 'div' );
-    txt.setAttribute( 'class', 'rlabel' );
+    var txt = div( 'class', 'rlabel' );
     txt.textContent = text;
     e.appendChild( txt );
     return;
