@@ -7,12 +7,14 @@ var suppressed_keys =
         'text': [],
         'uint': [],
         'dice': [],
+        'base': [],
     };
 
 var allowed_keys =
     {
         'uint': [],
         'dice': [],
+        'base': [],
     };
 
 
@@ -469,7 +471,7 @@ function do_something (e)
 function editclass (node)
 {
     var nc = ' ' + node.getAttribute('class') + ' ';
-    for( const c of ["text", "uint", "int", "blob", "dice"] )
+    for( const c of ["text", "uint", "int", "blob", "dice", "base"] )
         if( nc.indexOf( ' ' + c + ' ') >= 0 )
             return c;
 
@@ -1625,6 +1627,7 @@ function initialise ()
     var rollable;
     const uint_allowed = "0123456789";
     const dice_allowed = "0123456789+-d ";
+    const base_allowed = "abcdefghijklmnopqrstuvwxyz*." + uint_allowed;
     const pinfo_pat    = "//*[starts-with(@id, 'personal-info.')]";
 
     load_group_data();
@@ -1670,6 +1673,11 @@ function initialise ()
     // dice-spec
     for( var i = 0; i < dice_allowed.length; i++ )
         allowed_keys['dice'][dice_allowed.charCodeAt( i )] = true;
+
+    // base-spec (eg "stats.dex*3" or "15")
+    for( var i = 0; i < base_allowed.length; i++ )
+        allowed_keys['base'][base_allowed.charCodeAt( i )] = true;
+
     
     // since the order is allow/deny with a first-match-wins strategy
     // we must specifically allow movement keys for restricted input
