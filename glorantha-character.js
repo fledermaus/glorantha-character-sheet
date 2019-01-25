@@ -931,9 +931,6 @@ function add_stat_groups ()
 
         var title = element( 'h3', 'id', g.group + '-title' );
         title.textContent = group_title( g );
-        // var tdiv  = document.createElement( 'div' );
-        // tdiv.setAttribute( 'class', 'group-title' );
-        // tdiv.appendChild( title );
 
         var add;
         var template;
