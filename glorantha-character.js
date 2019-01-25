@@ -1017,14 +1017,41 @@ function refresh_group (g)
 // =========================================================================
 // UI for new skills/runes etc
 
-function field_widget (f)
+function field_widget (f,g)
 {
-    var label  = div( 'class', 'new-item-field-label'  );
-    var widget = div( 'class', 'new-item-field-widget' );
-
+    var widget;
+    var etype = f.type;
+    var wid   = 'new-item-widget-' + f.name;
+    var label = div( 'class', 'new-item-field-label'  );
     label.textContent  = ucfirst( f.name ) + ':';
-    widget.textContent = f.type + ' widget here';
     
+    if( typeof( etype ) == "string" )
+    {
+        var ec = 'new-item-field-widget editable ' + etype;
+        widget = div( 'id', wid, 'class', ec );
+        widget.contentEditable = "true";
+        widget.addEventListener( 'keydown', suppress_input  );
+        switch( etype )
+        {
+            case "text": widget.textContent = "-"; break;
+            case "base": widget.textContent = "0"; break;
+            case "uint": widget.textContent = "0"; break;
+        }
+    }
+    else if ( Array.isArray( etype ) )
+    {
+        var ec  = 'new-item-field-widget choice';
+        var sel = element( 'select', 'id', wid );
+        widget = div( 'class', ec );
+        widget.appendChild( sel );
+
+        for( const o of etype )
+        {
+            var opt = element( 'option', 'value', o );
+            opt.textContent = ucfirst( o );
+            sel.appendChild( opt );
+        }
+    }
     return [ label, widget ];
 }
 
@@ -1033,27 +1060,75 @@ function draw_skill_input_form (grp, type)
     dismiss_input_forms();
 
     var template = extn_template[ type ];
-    var group = get_group( grp );
+    var group    = get_group( grp );
     
     if( !template || !group )
         return;
-    
-    var form = div( 'id'   , grp + '.new.' + type + '.form',
-                    'class', 'new-item-form' );
+
+    var fid  = grp + '.new.' + type + '.form';
+    var form = div( 'id', fid, 'class', 'new-item-form' );
 
     var label = div( 'class', 'new-item-form-title' );
     label.textContent = group.label  + ' ► ' + ucfirst( type );
     form.appendChild( label );
 
     for( const f of template.fields )
-        for( const i of field_widget( f ) )
+        for( const i of field_widget( f, grp ) )
             form.appendChild( i );
-    
+
+    var cancel = div( 'class', 'new-item-form-cancel' );
+    cancel.textContent = "Cancel";
+    cancel.addEventListener( 'click', dismiss_this_form );
+
+    var save = div( 'class', 'new-item-form-save' );
+    save.textContent = "Add Skill";
+    save.addEventListener( 'click', function(){ process_form( fid, type ); } );
+
+    form.appendChild( cancel );
+    form.appendChild( save );
     document.body.appendChild( form );
 }
 
 // =========================================================================
 // Handle input from new-skill-etc forms
+
+function process_form (id,type)
+{
+    var form = document.getElementById( id );
+
+    if( !form )
+        return;
+
+    var template = extn_template[ type ];
+
+    if( !template )
+        return;
+
+    var data = {};
+
+    for( const f of template.fields )
+    {
+        var wid   = 'new-item-widget-' + f.name;
+        var path  = "//*[@id='" + wid + "']";
+        var nodes = xpath( path, form );
+
+        if( nodes.snapshotLength != 1 )
+            continue;
+
+        var widget = nodes.snapshotItem( 0 );
+        var value;
+
+        if( typeof( f.type ) == "string" )
+            value = widget.textContent;
+        else if( Array.isArray( f.type ) )
+            if( widget.options )
+                if( widget.selectedIndex >= 0 )
+                    value = widget.options[widget.selectedIndex].value;
+        data[ f.name ] = value;
+    }
+
+    console.log( data );
+}
 
 function dismiss_input_forms ()
 {
