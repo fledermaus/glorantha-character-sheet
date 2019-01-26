@@ -1657,10 +1657,16 @@ function load_group_data ()
             if( group.items[i]['key'] == entry_name )
                 n = i;
 
+        // new items are added to the predefined list as-is
         if( n == undefined )
+        {
             group.items.push( nv );
-        else
-            group.items[ n ] = nv;
+        }
+        else // preexisting items only load the base and value:
+        {
+            group.items[ n ].base = nv.base;
+            group.items[ n ].val  = nv.val;
+        }
     }
 }
 
