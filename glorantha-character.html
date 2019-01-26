@@ -78,6 +78,11 @@
       .new-item-form > div:first-child
                               { grid-column: 1 / 3; }
 
+      div.new-item-form-cancel { border: 1px dotted red;   cursor: pointer; }
+      div.new-item-form-save   { border: 1px dotted green; cursor: pointer; text-align: right; }
+      div.new-item-form-cancel:hover { background-color: rgb(48,48,64); }
+      div.new-item-form-save:hover   { background-color: rgb(48,48,64); }
+
       dt::after  { content: ": "; }
       dl { overflow: hidden; }
       dt, dd { float: left; display: block; }
