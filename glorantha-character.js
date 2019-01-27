@@ -2115,7 +2115,6 @@ function initialise ()
     // base-spec (eg "stats.dex*3" or "15")
     for( var i = 0; i < base_allowed.length; i++ )
         allowed_keys['base'][base_allowed.charCodeAt( i )] = true;
-
     
     // since the order is allow/deny with a first-match-wins strategy
     // we must specifically allow movement keys for restricted input
