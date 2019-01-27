@@ -310,7 +310,7 @@ function ucfirst (s)
 
 function xmatch_token(attr, tok)
 {
-    return "contains(concat(' ', @" + attr + ", ' '), '" + tok + "')";
+    return "contains(concat(' ', @" + attr + ", ' '), ' " + tok + " ')";
 }
 
 function xmatch_class(tok)
