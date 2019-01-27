@@ -998,10 +998,7 @@ function add_stat_groups ()
         }
         
         var lst = element( 'dl', 'id', g.group );
-        var j = 0;
-        var width = 0;
-        for( const i of g.items ) { j++; width += item_label( i ).length; }
-        width = width ? (maths.round( (width / j) / 1.02 ) + "em") : "1em";
+        var width = group_label_col_width( g );
 
         for( const i of g.items )
             make_item( lst, i, width, g.bonus ? g.bonus : 0 );
