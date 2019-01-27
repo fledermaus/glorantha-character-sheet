@@ -75,6 +75,7 @@ var extn_template =
     //                      { name: 'skill', type: 'uint' } ] }
 }
 
+var standard_skills = [];
 var groups =
 [
     { group: 'stats',
@@ -867,9 +868,26 @@ function make_item (dl, data, width, bonus)
 {
     var dt = element( 'dt' );
     var label = item_label( data );
+    var edit;
+    var lspan = element( 'span' );
 
-    dt.style.width = width;
-    dt.textContent = label;
+    if( !standard_skills[ data.key ] )
+    {
+        edit = div( 'class', 'delete-item' );
+        edit.textContent = '⊖';
+        edit.addEventListener( 'click', delete_user_item );
+    }
+    else
+    {
+        edit = div( 'class', 'noop-item' );
+        edit.textContent = ' ';
+    }
+    edit.style.width = '1em';
+
+    dt.appendChild( edit  );
+    dt.appendChild( lspan );
+    dt.style.width  = width;
+    lspan.textContent = label;
     dl.appendChild( dt );
 
     bonus = bonus * 1;
@@ -975,7 +993,7 @@ function group_title(g)
     if( g.bonus != undefined )
         ttext += ' (' + ((g.bonus >= 0) ? '+' : '') + (g.bonus * 1) + ')';
 
-    return ttext;
+    return '  ' + ttext;
 }
 
 function refresh_group (g)
@@ -1683,6 +1701,8 @@ function clear_element (e,text)
     return;
 }
 
+var initialised = 0;
+
 function initialise ()
 {
     var n;
@@ -1695,6 +1715,15 @@ function initialise ()
     const dice_allowed = "0123456789+-d ";
     const base_allowed = "abcdefghijklmnopqrstuvwxyz*." + uint_allowed;
     const pinfo_pat    = "//*[starts-with(@id, 'personal-info.')]";
+
+    if( initialised )
+        return;
+
+    initialised = 1;
+
+    for( const g of groups )
+        for( const i of g.items )
+            standard_skills[ i.key ] = true;
 
     load_group_data();
     
