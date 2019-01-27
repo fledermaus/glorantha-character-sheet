@@ -1075,6 +1075,10 @@ function draw_skill_input_form (grp, type)
 
     var label = div( 'class', 'new-item-form-title' );
     label.textContent = group.label  + ' ► ' + ucfirst( type );
+    label.appendChild( element( 'input' ,
+                                 'id'    , 'new-item-widget-group',
+                                 'type'  , 'hidden',
+                                 'value' , grp ) );
     form.appendChild( label );
 
     for( const f of template.fields )
@@ -1110,6 +1114,10 @@ function process_form (id,type)
         return;
 
     var data = {};
+
+    var grp = document.getElementById( 'new-item-widget-group' );
+    if( grp && grp.value )
+        data[ 'group' ] = grp.value;
 
     for( const f of template.fields )
     {
