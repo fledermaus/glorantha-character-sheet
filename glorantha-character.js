@@ -54,7 +54,7 @@ const attr_map = { 'stats.con':  [ calc_max_hp, calc_healrate, calc_enc    ] ,
 var extn_template =
 {
     skill:   { save:   add_new_skill,
-               draw:   draw_skill_input_form,
+               draw:   draw_default_input_form,
                fields: [ { name: 'skill', type: 'text' } ,
                          { name: 'base',  type: 'base' } ,
                          { name: 'level', type: 'uint' } ] },
@@ -535,6 +535,25 @@ function entry_base (entry)
     return undefined;
 }
 
+function del_entry (ident)
+{
+    var id    = split_id( ident );
+    var group = id[ 0 ];
+    var name  = id[ 1 ];
+    var grp   = get_group( group );
+    var gone  = null;
+
+    if( !grp )
+        return null;
+
+    for( var i = 0; !gone && (i < grp.items.length); i++ )
+        if( grp.items[ i ].key == name )
+            gone = grp.items.splice( i, 1 );
+
+    return gone;
+}
+
+
 function get_entry (ident)
 {
     var id    = split_id( ident );
@@ -910,6 +929,20 @@ function make_item (dl, data, width, bonus)
           make_stat_value( dl, data, bonus );
           break;
     }
+
+    return dt;
+}
+
+function group_label_col_width (g)
+{
+    var width = 1;
+    var w;
+
+    for( const i of g.items )
+        if( w = item_label( i ).length )
+            if( w > width )
+                width = w;
+    return (maths.round( width / 1.4 ) + 1) + "em";
 }
 
 function add_stat_groups ()
@@ -1018,7 +1051,44 @@ function refresh_group (g)
             inode.textContent = '' + (g.bonus + (i.val * 1));
 }
 
+// add a skill to the group (or refresh if it's already there)
+function draw_new_skill (group, skill)
+{
+    if( !group || !group.group )
+        return;
 
+    var lst   = document.getElementById( group.group );
+
+    if( !lst )
+        return;
+
+    var gid   = lst.getAttribute( 'id' );
+    var sid   = gid + '.' + skill.key;
+    var width = group_label_col_width( group );
+    var sval  = document.getElementById( sid );
+    var score = ( ((group.bonus ? group.bonus : 0) * 1) +
+                  ((skill.base  ? skill.base  : 0) * 1) +
+                  (skill.val   * 1) );
+
+    if( sval )
+    {
+        sval.textContent = '' + score;
+    }
+    else
+    {
+        var iel = make_item( lst, skill, width, group.bonus ? group.bonus : 0 );
+        activate_dice( iel, "after" );
+        activate_input_fields( iel, "after" );
+    }
+
+    var row = xpath( 'dt', lst );
+
+    if( row )
+        for( var i = 0; i < row.snapshotLength; i++ )
+            row.snapshotItem( i ).style.width = width;
+
+    update_item( sid, '' + score );
+}
 // =========================================================================
 // UI for new skills/runes etc
 
@@ -1060,7 +1130,7 @@ function field_widget (f,g)
     return [ label, widget ];
 }
 
-function draw_skill_input_form (grp, type)
+function draw_default_input_form (grp, type)
 {
     dismiss_input_forms();
 
@@ -1122,7 +1192,7 @@ function process_form (id,type)
     for( const f of template.fields )
     {
         var wid   = 'new-item-widget-' + f.name;
-        var path  = "//*[@id='" + wid + "']";
+        var path  = "descendant::*[@id='" + wid + "']";
         var nodes = xpath( path, form );
 
         if( nodes.snapshotLength != 1 )
@@ -1140,7 +1210,19 @@ function process_form (id,type)
         data[ f.name ] = value;
     }
 
-    console.log( data );
+    var status = template.save( data );
+    var panel;
+
+    switch( status )
+    {
+        case true:
+            dismiss_input_forms();
+            return;
+        default:
+            if( panel = document.getElementById( 'result' ) )
+                clear_element( panel, status );
+            return;
+    }
 }
 
 function dismiss_input_forms ()
@@ -1166,9 +1248,96 @@ function dismiss_this_form ()
                 ancestor.removeChild( parent );
 }
 
+function label_to_key (label)
+{
+    var l = ('' + label).toLowerCase();
+    var matched;
+    var generic  = '';
+    var specific = '';
+
+    if( matched = /^\s*(.+?)\s*\((.+?)\)/.exec( l ) )
+    {
+        generic  = matched[ 1 ];
+        specific = matched[ 2 ];
+    }
+    else if( matched = /^\s*(.+?)\s*$/.exec( l ) )
+    {
+        generic = matched[ 1 ];
+    }
+    else // should be impossible but just in case:
+    {
+        generic = '' +  l;
+    }
+
+    generic  = generic.replace ( / /g, '-' );
+    specific = specific.replace( / /g, '-' );
+
+    return generic + (specific ? ('.' + specific) : '' );
+}
+
+function detach_from (node, what)
+{
+    while( node.parentElement &&
+           node.parentElement.nodeName != what )
+        node = node.parentElement;
+
+    node.parentElement.removeChild( node );
+}
+
+function delete_user_item (e)
+{
+    var clicked = this;
+    var match   = xmatch_class( 'editable' );
+    var path    = ( "following-sibling::*/"  +
+                    "descendant-or-self::*[" + match + "][1]" );
+    var skill   = xpath( path, clicked.parentNode );
+
+    if( !skill || skill.snapshotLength != 1 )
+        return;
+
+    skill = skill.snapshotItem( 0 );
+
+    var id = skill.getAttribute( 'id' );
+
+    if( !standard_skills[id] )
+        del_entry( id );
+
+    localStorage.removeItem( id );
+
+    for( var n of [ skill, clicked ] )
+        detach_from( n, "DL" );
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function add_new_skill (form_data)
 {
+    var group = get_group( form_data.group );
 
+    if( !group )
+        return "Cannot add entry to group " + form_data.group;
+
+    var label = form_data.skill;
+    var base  = form_data.base * 1;
+    var level = form_data.level * 1;
+    var key   = label_to_key( label );
+
+    if( !key )
+        return "'" + label + "' is not a useful skill name";
+
+    if( base < 0 )
+        return "Base (" + base + ") cannot be less than zero";
+
+    if( level < 0 )
+        return "Score (" + level + ") cannot be less than zero";
+
+    var exists;
+    if( exists = get_entry( group.group + '.' + key ) )
+        return "Skill " + item_label( exists ) + " already exists";
+
+    var skill = { key: key, type: 'stat', label: label,
+                  base: base, val: level };
+    group.items.push( skill );
+    draw_new_skill( group, skill );
+    return true;
 }
 
 // =========================================================================
