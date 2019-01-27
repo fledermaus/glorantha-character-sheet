@@ -1701,16 +1701,73 @@ function clear_element (e,text)
     return;
 }
 
+function choose_axis (a)
+{
+    switch( a )
+    {
+        case "under":
+            return "descendant";
+        case "after":
+            return "following-sibling::*/descendant-or-self";
+        default:
+            if( !a )
+                return "descendant";
+    }
+
+    return a;
+}
+
+function activate_dice (node, axis)
+{
+    var match = xmatch_class( 'roll' );
+
+    if( !node )
+        node = document.body;
+
+    var path   = choose_axis( axis ) + "::*[" + match + "]"
+    var target = xpath( path, node );
+
+    //console.log( 'activating ' + target.snapshotLength + ' dice' );
+    for( var n = 0; n < target.snapshotLength; n++ )
+    {
+        var node = target.snapshotItem( n );
+        node.removeEventListener( 'click', do_something );
+        node.addEventListener   ( 'click', do_something );
+    }
+}
+
+function activate_input_fields (node, axis)
+{
+    var match = xmatch_class( 'editable' );
+
+    if( !node )
+        node = document.body;
+
+    var path   = choose_axis( axis ) + "::*[" + match + "]"
+    var target = xpath( path, node );
+
+    //console.log( 'activating ' + target.snapshotLength + ' input fields' );
+    for( var n = 0; n < target.snapshotLength; n++ )
+    {
+        var node = target.snapshotItem( n );
+        node.contentEditable = "true";
+        node.removeEventListener( 'input', handle_edit_event );
+        node.addEventListener   ( 'input', handle_edit_event );
+        node.removeEventListener( 'keydown', suppress_input  );
+        node.addEventListener   ( 'keydown', suppress_input  );
+    }
+
+    return target;
+}
+
 var initialised = 0;
 
 function initialise ()
 {
-    var n;
     var v;
     var editable;
     var pinfo;
     var node;
-    var rollable;
     const uint_allowed = "0123456789";
     const dice_allowed = "0123456789+-d ";
     const base_allowed = "abcdefghijklmnopqrstuvwxyz*." + uint_allowed;
@@ -1745,14 +1802,9 @@ function initialise ()
                 if( (v = localStorage.getItem( v )) != null )
                     node.textContent = v;
 
-    rollable = xpath( "//*[" + xmatch_class('roll') + "]" );
-    for( n = 0; n < rollable.snapshotLength; n++ )
-    {
-        var node = rollable.snapshotItem( n );
-        node.addEventListener( 'click', do_something );
-    }
+    activate_dice();
 
-    editable = xpath( "//*[" + xmatch_class('editable') + "]" );
+    editable = activate_input_fields();
     if( !editable || editable.snapshotLength <= 0 )
         return 0;
     
@@ -1786,13 +1838,5 @@ function initialise ()
             allowed_keys[c][i] = true;
     }
 
-    for( n = 0; n < editable.snapshotLength; n++ )
-    {
-        var node = editable.snapshotItem( n );
-        node.contentEditable = "true";
-        node.addEventListener( 'input', handle_edit_event );
-        node.addEventListener( 'keydown', suppress_input  );
-    }
-
-    return n;
+    return editable.snapshotLength;
 }
