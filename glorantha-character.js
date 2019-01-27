@@ -58,12 +58,12 @@ var extn_template =
                fields: [ { name: 'skill', type: 'text' } ,
                          { name: 'base',  type: 'base' } ,
                          { name: 'level', type: 'uint' } ] },
-    // emotion: { save:   add_new_emotion,
-    //            draw:   draw_emotion_input_form,
-    //            fields: [ { name: 'type',
-    //                        type: ['hate','love','loyalty','devotion'] },
-    //                      { name: 'subject', type: 'text' } ,
-    //                      { name: 'level',   type: 'uint' } ] },
+    emotion: { save:   add_new_emotion,
+               draw:   draw_default_input_form,
+               fields: [ { name: 'type',
+                           type: ['hate','love','loyalty','devotion'] },
+                         { name: 'subject', type: 'text' } ,
+                         { name: 'level',   type: 'uint' } ] },
     // rune:    { save: add_new_rune,
     //            draw: draw_rune_input_form,
     //            fields: [ { name: 'label', type: 'text' } ,
@@ -1307,6 +1307,42 @@ function delete_user_item (e)
     for( var n of [ skill, clicked ] )
         detach_from( n, "DL" );
 }
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function add_new_emotion (form_data)
+{
+    var group = get_group( form_data.group );
+
+    if( !group )
+        return "Cannot add entry to group " + form_data.group;
+
+    var what    = form_data.type;
+    var target  = form_data.subject;
+    var label   = ucfirst( what ) + ' (' + target + ')';
+    var key     = label_to_key( label );
+    var level   = form_data.level * 1;
+
+    if( !key )
+        return "'" + label + "' is not a recognised emotion";
+
+    if( level < 0 )
+        return "Intensity (" + level + ") cannot be less than zero";
+
+    var exists;
+    if( exists = get_entry( group.group + '.' + key ) )
+        return "Passion " + item_label( exists ) + " already exists";
+
+    var emo = { key:     key     ,
+                type:   'emotion',
+                subtype: what    ,
+                label:   label   ,
+                target:  target  ,
+                val:     level   };
+
+    group.items.push( emo );
+    draw_new_skill( group, emo );
+    return true;
+}
+
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function add_new_skill (form_data)
 {
