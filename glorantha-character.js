@@ -436,6 +436,36 @@ function handle_edit_event (e)
     }
 }
 
+function roll_label (dice)
+{
+    var id;
+    var skill;
+    var group;
+    var prefix = '🎲';
+
+    if( !dice )
+        return "🎲 Roll:";
+
+    if( dice.textContent )
+        prefix = dice.textContent;
+
+    prefix = prefix.replace( /^\s+|\s+$/g, '' );
+
+    if( dice.nextElementSibling )
+        if( id = dice.nextElementSibling.getAttribute('id') )
+            if( skill = get_entry( id ) )
+                group = get_group( id );
+
+    if( group && group.group == 'lore' )
+        return prefix + "Lore (" + item_label( skill ) + "):";
+
+    if( skill )
+        return prefix + item_label( skill ) + ":";
+
+    return prefix +
+        dice.parentNode.previousElementSibling.textContent + ':'
+}
+
 function do_something (e)
 {
     var target = this.nextElementSibling;
@@ -460,7 +490,7 @@ function do_something (e)
         if( rtype == 'uint' )
             return roll_d100( rnode,
                               target.textContent * 1,
-                              this.parentNode.previousElementSibling.textContent + ':' );
+                              roll_label( this ) );
 
     rnode.textContent = 'What?';
 }
@@ -1712,7 +1742,11 @@ function roll_prune (panel, node)
     {
         var label = ucfirst( split_id( rid )[ 1 ] ) + ':';
         var level = prune.textContent * 1;
-        return roll_d100( panel, level, label );
+        var glyph = ( node.textContent ?
+                      node.textContent.replace( /^\s+|\s+$/g, '' ) :
+                      '☯' );
+
+        return roll_d100( panel, level, glyph + label );
     }
 
     return undefined;
@@ -1847,7 +1881,7 @@ function roll_hit_location (panel, node)
     if( name )
         panel.textContent = 'Hit (' + type + ') ' + loc + ' = ' + name;
     else
-        panel.textContent = 'Bam! Right in the #' + loc;
+        panel.textContent = '🥊 Bam! Right in the #' + loc;
 
     return loc;
 }
