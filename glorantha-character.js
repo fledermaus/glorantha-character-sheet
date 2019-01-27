@@ -17,13 +17,10 @@ var allowed_keys =
         'base': [],
     };
 
-
 const rune_glyph = { darkness:  '●',
                      water:     '♒' , // ꤾ  𐦊
                      earth:     '□',
                      air:       'ᘎ', // ᠖
-                     fire:      '☉',
-                     sky:       '☉',
                      'fire/sky':'⦿',
                      moon:      'ⵀ', // UP AND RIGHT
                      chaos:     '☣',
