@@ -67,6 +67,12 @@
       .new-item      { float: right; clear: right; border: 0px;
                        position: relative; top: 5px; right: 5px;
                        cursor: pointer; }
+
+      .noop-item         { float: left; clear: none; border: 0px; }
+      .delete-item       { float: left; clear: none; border: 0px;
+                           cursor: pointer; color: red; }
+      .delete-item:hover { background-color: rgb(48,48,128); }
+
       .new-item-form { position: fixed; right: 50%; top: 50%;
                        display: grid; grid-template-columns: 1fr 3fr;
                        background-color: rgb(16,16,16);
