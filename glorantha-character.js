@@ -969,8 +969,8 @@ function add_stat_groups ()
             // remove the prerendered item from wherever it was
             // on the page. It will be added back in the order
             // of the entries in groups:
-            grp.parentNode.removeChild( grp );
             new_groups.push( grp );
+            grp.parentNode.removeChild( grp );
             continue;
         }
         
