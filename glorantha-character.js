@@ -1558,6 +1558,20 @@ const hits = { legl: [0,1,1,1,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6,7,7,7] ,
                chest:[0,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6,8,8,8,9,9,9] ,
                head: [0,1,1,1,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6,7,7,7] };
 
+function max_hp_for_area (area,maxhp)
+{
+    if( !hits[ area ] )
+        return 0;
+
+    if( maxhp < 0 )
+        return 0;
+
+    if( maxhp >= hits[ area ].length )
+        return hits[ area ][ hits[ area ].length - 1 ];
+
+    return hits[ area ][ maxhp ];
+}
+
 function update_hitpoints ()
 {
     var master = document.getElementById( 'derived.hp' );
@@ -1566,19 +1580,52 @@ function update_hitpoints ()
     var cur;
     var loss = 0;
 
+    // add up the hitpoints currently lost from each area
     for( const area of Object.keys( hits ) )
     {
         var mid = 'hitpoints.' + area + '.max';
         var cid = 'hitpoints.' + area + '.cur';
-        var hp  = hits[area][maxhp];
+
+        var new_hp = max_hp_for_area( area, maxhp );
+        var delta  = 0;
+
+        // figure out what, if any, maxhp change applies to this area
         if( max = document.getElementById( mid ) )
-            max.textContent = '' + hp;
+        {
+            // hitpoints start with an invalid value of '-'
+            // which we should ignore:
+            var old_hp = max.textContent;
+            if( isNaN(old_hp) )
+                old_hp = new_hp;
+            else
+                old_hp = old_hp * 1;
+
+            delta = new_hp - old_hp;
+            max.textContent = '' + new_hp;
+        }
+
+        // update the current hitpoints, remembering to
+        // adjust upwards or downwards for any max hp change,
+        // as well as any current injuries, and
+        // keep a running total of injuries
         if( cur = document.getElementById( cid ) )
-            loss += (hp - (cur.textContent * 1));
+        {
+            var cur_hp = cur.textContent * 1;
+
+            if( delta )
+            {
+                cur_hp += delta;
+                cur.textContent = '' + cur_hp;
+            }
+
+            loss += (new_hp - (cur.textContent * 1));
+        }
     }
 
     if( max = document.getElementById( 'hitpoints.total.max' ) )
         max.textContent = '' + maxhp;
+
+    // apply the running injury total to the current hp:
     if( cur = document.getElementById( 'hitpoints.total.cur' ) )
         cur.textContent = '' + (maxhp - loss);
 }
