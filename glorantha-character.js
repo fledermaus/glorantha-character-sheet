@@ -2,6 +2,25 @@
 // Copyright © 2019 Vivek Das Mohapatra <vivek@etla.org>
 const maths = Math;
 
+var manual_buff_on    = false;
+var manual_buff_val   = 0;
+
+// this is used for inspiration, ie buffing with runes or passions
+var auto_buff_on      = false;
+var auto_buff_val     = 0;
+
+// this works a little differently than the
+// other two: buff_on here means the next roll
+// should _create_ a buff_val
+
+// buff_val is a one-shot buff that is consumed
+// by the next applicable (skill) roll
+
+// unlike manual and auto, these two settings
+// are independent:
+var one_shot_buff_on  = false;
+var one_shot_buff_val = 0;
+
 var suppressed_keys =
     {
         'text': [],
@@ -350,6 +369,11 @@ function div ()
     return element( 'div' );
 }
 
+function get_dom_node (id)
+{
+    return document.getElementById( id );
+}
+
 // ===================================================================================
 // input handling
 
@@ -432,10 +456,124 @@ function handle_edit_event (e)
       case 'attr':
           update_item( id, val );
           break;
-          
+
+      case 'manual-buff':
+          manual_buff_val = val * 1;
+          break;
+
       default:
           return;
     }
+}
+
+function toggle_manual_buffs (e)
+{
+    var mbuf_ui = get_dom_node( 'manual-buff-list' );
+
+    if( manual_buff_on )
+    {
+        manual_buff_on = false;
+        mbuf_ui.style.visibility = 'collapse';
+    }
+    else
+    {
+        manual_buff_on = true;
+        mbuf_ui.style.visibility = 'visible';
+    }
+}
+
+function set_inspired_skill (id, panel)
+{
+    var label;
+    var skill = get_entry( id );
+
+    if( !skill )
+        return false;
+
+    if( skill.type != 'stat' )
+        return false;
+
+    auto_buff_on = id;
+    label = item_label( skill );
+
+    var inspired = get_dom_node( 'inspired' );
+    if( inspired )
+    {
+        inspired.textContent =
+            label + ((auto_buff_val >= 0) ? ' + ' : '') + auto_buff_val;
+        inspired.style.visibility = 'visible';
+    }
+
+    var expired = get_dom_node( 'expiration' );
+    if( expired )
+    {
+        expired.style.visibility = 'visible';
+    }
+
+    clear_element( panel );
+
+    return true;
+}
+
+function unset_inspired_skill (e)
+{
+    auto_buff_on = false;
+
+    var inspired = get_dom_node( 'inspired' );
+    if( inspired )
+    {
+        inspired.textContent = '-';
+        inspired.style.visibility = 'collapse';
+    }
+
+    var expired = get_dom_node( 'expiration' );
+    if( expired )
+        expired.style.visibility = 'collapse';
+
+    return true;
+}
+
+function buff_value_for (dice)
+{
+    var skill;
+    var one_shot = 0;
+
+    if( !dice )
+        return 0;
+
+    if( dice.nextElementSibling )
+        if( id = dice.nextElementSibling.getAttribute('id') )
+            skill = get_entry( id );
+
+    //console.log( "checking buff for " + id + ' : ' + skill.type );
+
+    if( id != 'misc.misc' )
+    {
+        if( !skill )
+            return 0;
+
+        if( skill.type != 'stat' )
+            return 0;
+    }
+
+    // consume any available one-shot bonus/malus
+    if( one_shot_buff_val )
+    {
+        one_shot += one_shot_buff_val * 1;
+        one_shot_buff_val = 0;
+    }
+
+    // we can have only one of manual or auto buff, but
+    // the one-shot always applies as that's how we
+    // do chained skills like hide + move-quietly = stealth
+    if( manual_buff_on )
+        return one_shot + manual_buff_val * 1;
+
+    if( auto_buff_on )
+        if( auto_buff_on == id )
+            return one_shot + auto_buff_val * 1;
+
+    return one_shot;
 }
 
 function roll_label (dice)
@@ -488,12 +626,19 @@ function do_something (e)
         if( rtype == 'uint' )
             return setup_nx_roll( rnode, this, target.textContent );
     
-    if( atype == 'skill' )
-        if( rtype == 'uint' )
-            return roll_d100( rnode,
-                              target.textContent * 1,
-                              roll_label( this ) );
+    if( atype == 'skill' && rtype == 'uint' )
+    {
+        if( auto_buff_on == 'unselected' )
+        {
+            var id = target.getAttribute( 'id' );
+            if( set_inspired_skill( id, rnode ) )
+                return;
+        }
 
+        return roll_d100( rnode,
+                          (target.textContent * 1) + buff_value_for( this ),
+                          roll_label( this ) );
+    }
     rnode.textContent = 'What?';
 }
 
@@ -513,7 +658,7 @@ function editclass (node)
 function updateclass (node)
 {
     var nc = ' ' + node.getAttribute('class') + ' ';
-    for( const c of ['pinfo', 'skill', 'attr', 'prune', 'hit'] )
+    for( const c of ['pinfo', 'skill', 'attr', 'prune', 'hit', 'manual-buff'] )
         if( nc.indexOf( ' ' + c + ' ') >= 0 )
             return c;
 
@@ -1661,6 +1806,19 @@ function reset_hitpoints (e)
 
 // =========================================================================
 // roll them bones
+function result_type_to_buff (s)
+{
+    switch( s )
+    {
+        case "CRIT!"  : return  50; break;
+        case "SPEC!"  : return  30; break;
+        case "PASS"   : return  20; break;
+        case "FAIL"   : return -20; break;
+        case "FUMBLE!": return -50; break;
+        default:
+            return 0; // this… can't happen?
+    }
+}
 
 function roll_d100 (result, skill, prefix)
 {
@@ -1696,6 +1854,35 @@ function roll_d100 (result, skill, prefix)
         result.textContent += rolled + "/" + skill;
         if( label )
             result.textContent += " = " + label;
+    }
+
+    if( one_shot_buff_on )
+    {
+        one_shot_buff_on = false;
+        one_shot_buff_val = result_type_to_buff( label );
+
+        if( result )
+        {
+            var klaxon = div();
+            klaxon.textContent =
+                "Next skill roll buffed by " + one_shot_buff_val;
+            result.appendChild( klaxon );
+        }
+    }
+    // we seek inspiration but have not yet achieved it
+    else if (auto_buff_on == true)
+    {
+        auto_buff_val = result_type_to_buff( label );
+        auto_buff_on  = 'unselected';
+
+        if( result )
+        {
+            var klaxon = div();
+            klaxon.textContent =
+                ( auto_buff_val > 0 ? "Inspiration!" : "Despair." ) +
+                " Click the 🎲 next to a skill to choose it.";
+            result.appendChild( klaxon );
+        }
     }
 
     return [ rolled, label ];
@@ -2053,6 +2240,89 @@ function activate_input_fields (node, axis)
     return target;
 }
 
+function start_chained_buff (e)
+{
+    var panel = get_dom_node( 'result' );
+
+    one_shot_buff_on = true;
+    panel.textContent = "Make your buff/debuff roll";
+}
+
+function start_inspiration (e)
+{
+    var panel = get_dom_node( 'result' );
+
+    auto_buff_on  = true;
+    auto_buff_val = 0;
+    panel.textContent = "Roll a passion or rune for inspiration";
+}
+
+function set_manual_buff (e)
+{
+    var from = this;
+    var to;
+    var cclass;
+    var value = 0;
+
+    if( cclass = this.getAttribute( 'class' ) )
+        if( cclass.match( /manual-buff/ ) )
+            value = this.textContent * 1;
+
+    if( to = get_dom_node( 'bxx' ) )
+    {
+        to.textContent = '' + value;
+        manual_buff_on = true;
+        manual_buff_val = value;
+    }
+}
+
+function activate_buffctl ()
+{
+    var karate = get_dom_node( 'wax-on-wax-off' );
+
+    if( karate )
+    {
+        karate.removeEventListener( 'click', toggle_manual_buffs );
+        karate.addEventListener   ( 'click', toggle_manual_buffs );
+    }
+
+    var match  = xmatch_class( 'manual-buff' );
+    var updown = xpath( "//*[" + match + "]" );
+    var btn;
+
+    if( updown )
+        for( var i = 0; i < updown.snapshotLength; i++ )
+            if( btn = updown.snapshotItem( i ) )
+            {
+                btn.removeEventListener( 'click', set_manual_buff );
+                btn.addEventListener   ( 'click', set_manual_buff );
+            }
+
+    var chain = get_dom_node( 'one-shot-buff' );
+
+    if( chain )
+    {
+        chain.removeEventListener( 'click', start_chained_buff );
+        chain.addEventListener   ( 'click', start_chained_buff );
+    }
+
+    var inspire = get_dom_node( 'inspiration' );
+
+    if( inspire )
+    {
+        inspire.removeEventListener( 'click', start_inspiration );
+        inspire.addEventListener   ( 'click', start_inspiration );
+    }
+
+    var expire = get_dom_node( 'expiration' );
+
+    if( expire )
+    {
+        expire.removeEventListener( 'click', unset_inspired_skill );
+        expire.addEventListener   ( 'click', unset_inspired_skill );
+    }
+}
+
 var initialised = 0;
 
 function initialise ()
@@ -2097,6 +2367,8 @@ function initialise ()
                     node.textContent = v;
 
     activate_dice();
+
+    activate_buffctl();
 
     editable = activate_input_fields();
     if( !editable || editable.snapshotLength <= 0 )

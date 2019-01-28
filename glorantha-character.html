@@ -51,7 +51,13 @@
       .buffopt       { display: flex; border: 0px; padding: 4px; }
       .buffopt:hover { background-color: rgb(16,16,64); }
       .buffopt > div { border: 0px; padding: 2px; }
-      .buffopt > div:first-child + div { width: 100%; }
+      .buffopt > div:first-child + div { width: 100%; text-align: center; }
+
+      #manual-buff-list  { border: 0px; visibility: collapse; }
+      .manual-buff       { clear: none; float: left; padding: 4px; }
+      .manual-buff:hover { background-color: rgb(16,16,64); }
+      #inspired   { visibility: collapse; }
+      #expiration { visibility: collapse; }
 
       #groups { width: 100%;
                 display: flex;
@@ -184,14 +190,26 @@
         </div>
       </div>
       <div id="buff-opts" class="buffs" style="height: 100%">
-        <div class="buffopt">
-          <div>▲</div><div>1-Shot Buff</div><div>▲</div>
+        <div class="buffopt" id="one-shot-buff">
+          <div>▲</div><div>One Shot Buff</div><div>▲</div>
         </div>
-        <div class="buffopt">
+        <div class="buffopt" id="inspiration">
           <div>⏫</div><div>Inspire</div><div>⏫</div>
         </div>
-        <div class="buffopt">
-          <div>±</div><div>Roll Modifier</div><div>±</div>
+        <div id="inspired">-</div>
+        <div class="buffopt" id="expiration">
+          <div>⏬</div><div>Inspiration fades…</div><div>⏬</div>
+        </div>
+        <div class="buffopt" id="wax-on-wax-off">
+          <div>±</div><div>Skill Modifier (Buff)</div><div>±</div>
+        </div>
+        <div id="manual-buff-list">
+          <div id="m20" class="manual-buff">-50</div>
+          <div id="m20" class="manual-buff">-20</div>
+          <div id="b20" class="manual-buff">+20</div>
+          <div id="b30" class="manual-buff">+30</div>
+          <div id="b50" class="manual-buff">+50</div>
+          <div id="bxx" class="manual-buff editable int">0</div>
         </div>
       </div>
       <div class="result" id="result">🎲</div>
