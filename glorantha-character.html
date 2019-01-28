@@ -15,7 +15,10 @@
 
       @font-face { font-family: lydian;
                    src: local("Noto Sans Lydian"),
-                   url("glorantha-fonts/NotoSansLydian-Regular.ttf"); }
+                   url("glorantha-fonts/notosanslydian-regular-webfont.woff2") format("woff2"),
+                   url("glorantha-fonts/notosanslydian-regular-webfont.woff") format("woff"),
+                   url("glorantha-fonts/notosanslydian-regular-webfont.svg") format("svg"),
+                   url("glorantha-fonts/NotoSansLydian-Regular.ttf") format("truetype"); }
 
       @font-face { font-family: glorantha-uuni;
                    src: local("unifont upper"),
@@ -29,15 +32,20 @@
                    src: local("Noto Sans Bamum"),
                    url("./glorantha-fonts/NotoSansBamum-Regular.ttf") format("truetype"); }
 
+      @font-face { font-family: emoji;
+                   src: local("Noto Color Emoji"),
+                   local("Noto Emoji"),
+                   url("./glorantha-fonts/NotoEmoji-Regular.ttf") format("truetype"); }
+
       body { background-color: rgb(0,0,0); color: rgb(255,255,255);
-            font-family: "DejaVu Sans",
-                         "Noto Color Emoji",
-                         "Noto Emoji",
-                         "glorantha-sans",
-                         "lydian",
-                         "glorantha-uuni",
-                         "glorantha-symbola",
-                         "glorantha-bamum"; }
+             font-family: "DejaVu Sans",
+                          "glorantha-sans",
+                          "emoji",
+                          "lydian",
+                          "glorantha-uuni",
+                          "glorantha-symbola",
+                          "glorantha-bamum",
+                          "Sans"; }
       div  { border: 2px solid white; border-radius: 3px;
              box-sizing:border-box; }
 
