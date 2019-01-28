@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright © 2019 Vivek Das Mohapatra <vivek@etla.org>
-const maths = Math;
+const maths = Math; // mathematicS, damnit.
 
 var manual_buff_on    = false;
 var manual_buff_val   = 0;
