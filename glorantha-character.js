@@ -148,13 +148,6 @@ var groups =
                { key: 'vitality'   , type: 'prune', subkeys: [ 'fertility', 'death'    ], val: 50 } ,
                { key: 'variability', type: 'prune', subkeys: [ 'harmony'  , 'disorder' ], val: 50 } ,
                { key: 'viricity'   , type: 'prune', subkeys: [ 'man'      , 'beast'    ], val: 50 } ] },
-    // { key: 0, type: 'emotion', subtype: 'hate',    target: 'Authority',    val: 60 } ,
-    // { key: 1, type: 'emotion', subtype: 'hate',    target: 'Wolf Pirates', val: 60 } ,
-    // { key: 2, type: 'emotion', subtype: 'love',    target: 'Family',       val: 60 } ,
-    // { key: 3, type: 'emotion', subtype: 'loyalty', target: 'Nochet',       val: 60 } ,
-    // { key: 4, type: 'emotion', subtype: 'loyalty', target: 'Argrath',      val: 60 } ,
-    // { key: 5, type: 'emotion', subtype: 'loyalty', target: 'Holy Country', val: 60 } ,
-    // { key: 6, type: 'emotion', subtype: 'loyalty', target: 'Clan',         val: 60 } 
     { group: 'emo',
       label: 'Passions',
       extend: 'emotion',
