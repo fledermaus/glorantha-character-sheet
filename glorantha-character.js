@@ -6,6 +6,7 @@ var suppressed_keys =
     {
         'text': [],
         'uint': [],
+        'int' : [],
         'dice': [],
         'base': [],
     };
@@ -13,6 +14,7 @@ var suppressed_keys =
 var allowed_keys =
     {
         'uint': [],
+        'int' : [],
         'dice': [],
         'base': [],
     };
@@ -2060,6 +2062,7 @@ function initialise ()
     var pinfo;
     var node;
     const uint_allowed = "0123456789";
+    const int_allowed  = "-" + uint_allowed;
     const dice_allowed = "0123456789+-d ";
     const base_allowed = "abcdefghijklmnopqrstuvwxyz*." + uint_allowed;
     const pinfo_pat    = "//*[starts-with(@id, 'personal-info.')]";
@@ -2107,6 +2110,8 @@ function initialise ()
     // the digits
     for( var i = 0; i < uint_allowed.length; i++ )
         allowed_keys['uint'][uint_allowed.charCodeAt( i )] = true;
+    for( var i = 0; i < int_allowed.length; i++ )
+        allowed_keys['int'][int_allowed.charCodeAt( i )] = true;
 
     // dice-spec
     for( var i = 0; i < dice_allowed.length; i++ )
