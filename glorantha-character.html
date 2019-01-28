@@ -101,7 +101,17 @@
       dl         { overflow: hidden; }
       dt, dd     { float: left; display: block; }
       dd         { clear: none; }
-      dt         { width: 9em; clear: both; }
+      dt         { width: 9em; clear: left; }
+      .group dt:nth-of-type(odd),
+      .group dd:nth-of-type(odd)
+                 { background-color: rgb(48,48,64); }
+
+      #prune dd:nth-of-type(4n+1),
+      #prune dd:nth-of-type(4n+2)
+                 { background-color: rgb(48,48,64); }
+
+      #prune dd:nth-of-type(4n+3)
+                 { background-color: rgb(0,0,0); }
 
       .editable { background-color: rgb(48,48,48); }
 
