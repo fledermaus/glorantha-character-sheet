@@ -367,7 +367,17 @@ function get_dom_node (id)
     return document.getElementById( id );
 }
 
-// ===================================================================================
+function utoa (str)
+{
+    return btoa( unescape( encodeURIComponent( str ) ) );
+}
+
+function atou (str)
+{
+    return decodeURIComponent( escape( atob( str ) ) );
+}
+
+// =========================================================================
 // input handling
 
 function eventstr (e)
