@@ -313,6 +313,8 @@ var groups =
                { key: 'kick',    type: 'stat', label: "Kick",    base: 10, val: 0 } ] },
 ];
 
+const pinfo_pat = "//*[starts-with(@id, 'personal-info.')]";
+
 // =========================================================================
 // utilities
 
@@ -2359,7 +2361,6 @@ function initialise ()
     const int_allowed  = "-" + uint_allowed;
     const dice_allowed = "0123456789+-d ";
     const base_allowed = "abcdefghijklmnopqrstuvwxyz*." + uint_allowed;
-    const pinfo_pat    = "//*[starts-with(@id, 'personal-info.')]";
 
     if( initialised )
         return;
