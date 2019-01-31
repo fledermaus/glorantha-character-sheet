@@ -1846,7 +1846,7 @@ function result_type_to_buff (s)
 
 function roll_d100 (result, skill, prefix)
 {
-    if( isNaN( skill ) || (skill <= 0) )
+    if( isNaN( skill ) )
     {
         if( result )
             result.textContent = (prefix ? prefix + " " : '') + 'Unavailable';
