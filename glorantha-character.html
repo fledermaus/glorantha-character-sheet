@@ -122,8 +122,9 @@
 
       dt::after  { content: ": "; }
       dl         { overflow: hidden; }
-      dt, dd     { float: left; display: block; }
-      dd         { clear: none; }
+      dt, dd     { float: left; display: block;
+                   padding-top: 2px; padding-bottom: 2px; }
+      dd         { clear: none; width: 5em; }
       dt         { width: 9em; clear: left; }
       .group dt:nth-of-type(odd),
       .group dd:nth-of-type(odd)
