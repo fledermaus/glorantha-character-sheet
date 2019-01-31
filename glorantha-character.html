@@ -54,12 +54,19 @@
       .chinfo       { padding: 4px; border: 2px solid white; clear: left; width: 100%; }
       .dice-bag     { padding: 4px; clear: left; width: 100%; border: 2px solid white; }
 
+      #misc-dice dt { width: 11em; }
+      #misc-dice dt:nth-of-type(odd),
+      #misc-dice dd:nth-of-type(odd)
+                    { background-color: rgb(48,48,64); }
+
       .buffs         { float: left; padding: 4px; display: flex;
                        flex-direction: column; border: 2px solid white; }
       .buffopt       { display: flex; padding: 4px; }
       .buffopt:hover { background-color: rgb(16,16,64); }
       .buffopt > div { padding: 2px; }
       .buffopt > div:first-child + div { width: 100%; text-align: center; }
+      #buff-opts > .buffopt:nth-of-type(odd) { background-color: rgb(48,48,64); }
+      #buff-opts > .buffopt:nth-of-type(odd):hover { background-color: rgb(16,16,64); }
 
       #manual-buff-list  { visibility: collapse; }
       .manual-buff       { clear: none; float: left; padding: 4px; border: 2px solid white; }
