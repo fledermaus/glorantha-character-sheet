@@ -377,6 +377,27 @@ function atou (str)
     return decodeURIComponent( escape( atob( str ) ) );
 }
 
+// like the text content prop except <br> gets tutned into \n
+function node_content (n)
+{
+    var text = '';
+
+    if( !n || !n.nodeName )
+        return "";
+
+    if( n.nodeName == 'BR' )
+        return "\n";
+
+    for( const child of n.childNodes )
+        switch( child.nodeType )
+        {
+            case Node.ELEMENT_NODE: text += node_content( child ); break;
+            case Node.TEXT_NODE:    text += child.textContent;    break;
+        }
+
+    return text;
+}
+
 // =========================================================================
 // input handling
 
