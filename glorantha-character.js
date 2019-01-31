@@ -1856,11 +1856,21 @@ function roll_d100 (result, skill, prefix)
         return [ undefined, 'UNAVAILABLE' ];
     }
     var rolled = maths.floor( maths.random() * 100 ) + 1;
+
+    // these range calculations ignore the fact that 1-5 is always a success:
+    // this contradicts the written description in the core book, but agrees
+    // with the pre-calculated charts provided therein:
     var crit   = maths.round( skill / 20 );
     var spec   = maths.round( skill / 5  );
-    var fumble = maths.round( 100.99 - ((100 - skill) / 20) );
     var label  = "";
-    var adjlev = ( skill > 95 ) ? 95 : skill;
+    // 01-05 always OK; skill never > 95 for the roll
+    // skill > 95 does extend the crit and special ranges
+    var adjlev = ( skill < 5 ) ? 5 : ( (skill > 95) ? 95 : skill );
+    var fumble = 101 - maths.round( (100 - skill)/ 20 );
+
+    // 00 always fumbles
+    if( fumble > 100 )
+        fumble = 100;
     
     if( rolled == 1 || rolled <= crit )
         label = "CRIT!";
