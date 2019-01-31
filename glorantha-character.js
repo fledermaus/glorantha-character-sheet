@@ -96,7 +96,7 @@ var extn_template =
     //                      { name: 'skill', type: 'uint' } ] }
 }
 
-var standard_skills = [];
+var standard_skills = {};
 var groups =
 [
     { group: 'stats',
@@ -1086,14 +1086,15 @@ function item_label (data)
     }
 }
 
-function make_item (dl, data, width, bonus)
+function make_item (dl, group, data, width, bonus)
 {
     var dt = element( 'dt' );
     var label = item_label( data );
     var edit;
     var lspan = element( 'span' );
+    var id = group + '.' + data.key;
 
-    if( !standard_skills[ data.key ] )
+    if( !standard_skills[ id ] )
     {
         edit = div( 'class', 'delete-item' );
         edit.textContent = '⊖';
@@ -1204,7 +1205,7 @@ function add_stat_groups ()
         var width = group_label_col_width( g );
 
         for( const i of g.items )
-            make_item( lst, i, width, g.bonus ? g.bonus : 0 );
+            make_item( lst, g.group, i, width, g.bonus ? g.bonus : 0 );
 
         new_groups.push( grp );
         if( add )
@@ -1276,7 +1277,8 @@ function draw_new_skill (group, skill)
     }
     else
     {
-        var iel = make_item( lst, skill, width, group.bonus ? group.bonus : 0 );
+        var iel = make_item( lst, gid, skill, width,
+                             group.bonus ? group.bonus : 0 );
         activate_dice( iel, "after" );
         activate_input_fields( iel, "after" );
     }
@@ -1499,7 +1501,7 @@ function delete_user_item (e)
 
     var id = skill.getAttribute( 'id' );
 
-    if( !standard_skills[id] )
+    if( !standard_skills[ id ] )
         del_entry( id );
 
     localStorage.removeItem( id );
@@ -2379,7 +2381,7 @@ function initialise ()
 
     for( const g of groups )
         for( const i of g.items )
-            standard_skills[ i.key ] = true;
+            standard_skills[ g.group + '.' + i.key ] = true;
 
     load_group_data();
     
