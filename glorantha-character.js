@@ -369,6 +369,21 @@ function get_dom_node (id)
     return document.getElementById( id );
 }
 
+function set_dom_node_text (id, text, edit)
+{
+    var node = get_dom_node( id );
+
+    if( !node )
+        return undefined;
+
+    node.textContent = '' + text;
+
+    if( edit )
+        handle_edit_event.apply( node );
+
+    return node;
+}
+
 function utoa (str)
 {
     return btoa( unescape( encodeURIComponent( str ) ) );
