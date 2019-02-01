@@ -2501,3 +2501,17 @@ function initialise ()
 
     return editable.snapshotLength;
 }
+
+function debug_skill_ranges ()
+{
+    // dump out the skill / crit / special / fumble values
+    for( x = 1; x <= 110; x++ )
+    {
+        var a = maths.round( 100.99 - ((100 - x) / 20) );
+        var skill = (x < 5) ? 5 : ((x > 95) ? 95 : x);
+        var b = 101 - maths.round( (100 - x)/ 20 );
+        var c = maths.round( x / 20 );
+        var s = maths.round( x / 5 );
+        console.log( x + " " + c + " — " + s + " — " + b );
+    }
+}
