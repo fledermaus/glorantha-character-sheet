@@ -1196,18 +1196,18 @@ function add_stat_groups ()
         var title = element( 'h3', 'id', g.group + '-title' );
         title.textContent = group_title( g );
 
-        var add;
         var template;
         if( template = extn_template[ g.extend ] )
         {
             if( template.draw && template.save )
             {
                 var func = template.draw;
-                var handler =
-                    function () { func( g.group, g.extend ) };
-                add = div( 'id', g.group + '.new-item', 'class', 'new-item' );
+                var handler = function () { func( g.group, g.extend ) };
+                var nid = g.group + '.new-item';
+                var add = div( 'id', nid, 'class', 'new-item' );
                 add.addEventListener( 'click', handler );
                 add.textContent = '➕';
+                grp.appendChild( add );
             }
         }
         
@@ -1218,8 +1218,6 @@ function add_stat_groups ()
             make_item( lst, g.group, i, width, g.bonus ? g.bonus : 0 );
 
         new_groups.push( grp );
-        if( add )
-            grp.appendChild( add );
         grp.appendChild( title );
         grp.appendChild( lst );
     }
