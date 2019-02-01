@@ -559,17 +559,15 @@ function unset_inspired_skill (e)
     return true;
 }
 
-function buff_value_for (dice)
+function buff_value_for (id)
 {
     var skill;
     var one_shot = 0;
 
-    if( !dice )
+    if( !id )
         return 0;
 
-    if( dice.nextElementSibling )
-        if( id = dice.nextElementSibling.getAttribute('id') )
-            skill = get_entry( id );
+    skill = get_entry( id );
 
     //console.log( "checking buff for " + id + ' : ' + skill.type );
 
@@ -617,10 +615,9 @@ function roll_label (dice)
 
     prefix = prefix.replace( /^\s+|\s+$/g, '' );
 
-    if( dice.nextElementSibling )
-        if( id = dice.nextElementSibling.getAttribute('id') )
-            if( skill = get_entry( id ) )
-                group = get_group( id );
+    if( id = dice.getAttribute('data-ge-id') )
+        if( skill = get_entry( id ) )
+            group = get_group( id );
 
     if( group && group.group == 'lore' )
         return prefix + "Lore (" + item_label( skill ) + "):";
@@ -632,15 +629,28 @@ function roll_label (dice)
         dice.parentNode.previousElementSibling.textContent + ':'
 }
 
+function get_target (node)
+{
+    var id;
+
+    if( !node )
+        return undefined;
+
+    if( !(id = node.getAttribute( 'data-ge-id' )) )
+        return undefined;
+
+    return get_dom_node( id );
+}
+
 function do_something (e)
 {
-    var target = this.nextElementSibling;
+    var target = get_target( this );
     var rtype  = editclass( target );
     var atype  = updateclass( target );
     var rnode  = document.getElementById( 'result' );
 
     if( atype == 'prune' )
-        return roll_prune( rnode, this );
+        return roll_prune( rnode, this, target );
 
     if( atype == 'hit' )
         return roll_hit_location( rnode, this );
@@ -654,17 +664,16 @@ function do_something (e)
     
     if( atype == 'skill' && rtype == 'uint' )
     {
+        var id = target.getAttribute( 'id' );
+
         if( auto_buff_on == 'unselected' )
-        {
-            var id = target.getAttribute( 'id' );
             if( set_inspired_skill( id, rnode ) )
                 return;
-        }
 
-        return roll_d100( rnode,
-                          (target.textContent * 1) + buff_value_for( this ),
-                          roll_label( this ) );
+        var adjusted_skill = (target.textContent * 1) + buff_value_for( id );
+        return roll_d100( rnode, adjusted_skill, roll_label( this ) );
     }
+
     rnode.textContent = 'What?';
 }
 
@@ -949,14 +958,13 @@ function update_item (i,v,norecurse)
 // ===================================================================================
 // UI rendering
 
-function _make_stat_value(dl, data, bonus, subtype)
+function _make_stat_value(dl, id, data, bonus, subtype)
 {
     var dd   = element( 'dd' );
     var cssc = (data.noedit ? '' : 'editable ') + subtype + ' ';
-    var id   = dl.getAttribute( 'id' ) + '.' + data.key;
     var val  = data.val;
     var sval = element( 'span' );
-    var sbtn = element( 'span' );
+    var sbtn = element( 'span', 'data-ge-id', id );
     var base = entry_base( data );
     
     switch( data.type )
@@ -1007,19 +1015,21 @@ function _make_stat_value(dl, data, bonus, subtype)
     dl.appendChild( dd  );
 }
 
-function make_stat_value (dl, data, bonus)
+function make_stat_value (dl, id, data, bonus)
 {
-    _make_stat_value( dl, data, bonus, 'skill' );
+    _make_stat_value( dl, id, data, bonus, 'skill' );
 }
 
-function make_attr_value (dl, data, bonus)
+function make_attr_value (dl, id, data, bonus)
 {
-    _make_stat_value( dl, data, bonus, 'attr' );
+    _make_stat_value( dl, id, data, bonus, 'attr' );
 }
 
 function make_paired_roll_button (id, rune)
 {
-    var btn  = div( 'class', 'roll', 'id', 'invoke.' + id + rune );
+    var btn  = div( 'class'     , 'roll',
+                    'id'        , 'invoke.' + id + '.' + rune,
+                    'data-ge-id', id + '.' + rune );
 
     if( rune_glyph[ rune ] )
         btn.textContent = rune_glyph[ rune ] + '  ';
@@ -1043,7 +1053,7 @@ function make_paired_value (dl, data)
     var cssc = 'editable uint prune';
     var v0   = data.val;
     var v1   = 100 - data.val;
-    var id   = dl.getAttribute( 'id' ) + '.';
+    var id   = dl.getAttribute( 'id' );
 
     var s0b  = make_paired_roll_button( id, data.subkeys[ 0 ] );
     var s1b  = make_paired_roll_button( id, data.subkeys[ 1 ] );
@@ -1051,12 +1061,12 @@ function make_paired_value (dl, data)
 
     rune = data.subkeys[ 0 ];
     s0v.setAttribute( 'class', cssc );
-    s0v.setAttribute( 'id'   , id + rune );
+    s0v.setAttribute( 'id'   , id + '.' + rune );
     s0v.textContent = '' + v0;
 
     rune = data.subkeys[ 1 ];
     s1v.setAttribute( 'class', cssc );
-    s1v.setAttribute( 'id'   , id + rune );
+    s1v.setAttribute( 'id'   , id + '.' + rune );
     s1v.textContent = '' + v1;
 
     d0.appendChild( s0b );
@@ -1096,13 +1106,13 @@ function make_item (dl, group, data, width, bonus)
 
     if( !standard_skills[ id ] )
     {
-        edit = div( 'class', 'delete-item' );
+        edit = div( 'class', 'delete-item', 'data-ge-id', id );
         edit.textContent = '⊖';
         edit.addEventListener( 'click', delete_user_item );
     }
     else
     {
-        edit = div( 'class', 'noop-item' );
+        edit = div( 'class', 'noop-item', 'data-ge-id', id );
         edit.textContent = ' ';
     }
     edit.style.width = '1em';
@@ -1118,10 +1128,10 @@ function make_item (dl, group, data, width, bonus)
     switch( data.type )
     {
       case 'attr':
-          make_attr_value( dl, data, bonus );
+          make_attr_value( dl, id, data, bonus );
           break;
       case 'emotion':
-          make_stat_value( dl, data, bonus );
+          make_stat_value( dl, id, data, bonus );
           break;
       case 'prune':
           make_paired_value( dl, data );
@@ -1130,7 +1140,7 @@ function make_item (dl, group, data, width, bonus)
       case 'rune':
       case 'dice':
       default:
-          make_stat_value( dl, data, bonus );
+          make_stat_value( dl, id, data, bonus );
           break;
     }
 
@@ -2005,14 +2015,11 @@ function roll_nx (e)
     return undefined;
 }
 
-function roll_prune (panel, node)
+function roll_prune (panel, node, prune)
 {
-    var id    = node.getAttribute( 'id' );
-    var ident = split_id( id );
-    var rid   = ident[ 1 ];
-    var prune = document.getElementById( rid );
+    var rid   = prune.getAttribute( 'id' );
 
-    if( prune )
+    if( node && prune )
     {
         var label = ucfirst( split_id( rid )[ 1 ] ) + ':';
         var level = prune.textContent * 1;
@@ -2061,11 +2068,12 @@ function roll_hit_location (panel, node)
 {
     var loc  = roll_ndx( "1d20" );
     var name = '';
-    var id   = node.getAttribute( 'id' ) || 'hit.generic';
+    var id   = node.getAttribute( 'data-ge-id' ) || 'hit.generic';
     var type = split_id( id )[ 1 ];
 
     switch( type )
     {
+      case 'generic':
       case 'melee':
           switch( loc )
           {
