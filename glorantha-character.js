@@ -463,6 +463,268 @@ function node_content (n)
 }
 
 // =========================================================================
+// export character
+const GCSTART = "-----BEGIN GLORANTHA CHARACTER-----\n";
+const GCEND   = "-----END GLORANTHA CHARACTER-----\n";
+
+function close_io_pane (e)
+{
+    var iopane;
+
+    if( this )
+        if( iopane = this.parentElement )
+            iopane.parentElement.removeChild( iopane );
+}
+
+function io_pane ()
+{
+    var panel  = div( 'class', 'import-export' );
+    var iopane = element( 'pre', 'id', 'io-data', 'class', 'io-data' );
+    var cancel = div( 'class', 'io-cancel' );
+
+    if( !panel )
+        return;
+
+    cancel.textContent = 'Close';
+
+    panel.appendChild( iopane );
+    panel.appendChild( cancel );
+
+    cancel.addEventListener( 'click', close_io_pane );
+
+    document.body.appendChild( panel );
+
+    return iopane;
+}
+
+function export_data ()
+{
+    var data   = {};
+    var iopane = io_pane();
+    var blob;
+    var formatted;
+
+    for( const g of groups )
+    {
+        var gcache = [];
+
+        for( const i of g.items )
+            if( !i.noedit )
+                if( standard_skills[ g.group + '.' + i.key ] )
+                    gcache.push( (i.base == null) ? [ i.key, i.val ] : [ i.key, i.val, i.base ] );
+                else
+                    gcache.push( [ false, i ] );
+
+        data[ g.group ] = gcache;
+    }
+
+    var pinfo = xpath( pinfo_pat );
+    var node;
+    var id;
+    var v;
+
+    for( var n = 0; pinfo && (n < pinfo.snapshotLength); n++ )
+        if( node = pinfo.snapshotItem( n ) )
+            if( id = node.getAttribute( 'id' ) )
+                if( (v = storage.get( id )) )
+                    data[ id ] = v;
+
+    blob = JSON.stringify( data );
+    blob = utoa( blob );
+
+    formatted = GCSTART;
+    for( var c = 0; c < blob.length; c += 160 )
+        formatted += blob.substr( c, 160 ) + "\n";
+    formatted += GCEND;
+
+    iopane.textContent = formatted;
+}
+
+function import_item( grp, data )
+{
+    var group;
+
+    if( !(group = get_group( grp )) )
+        return '';
+    var bonus = group_modifier( group );
+
+    var id;             // groupid.itemid
+    var rid;      // returned id (≠ id for paired runes)
+    var cur_item;
+    var new_item = {};
+    var itemid;
+
+    if( itemid = data[ 0 ] ) // exported item was predefined
+    {
+        id           = grp + '.' + itemid;
+        new_item.val = data[ 1 ];
+        if( data[ 2 ] != undefined )
+            new_item.base = data[ 2 ];
+    }
+    else // exported item was user-defined
+    {
+        new_item = data[ 1 ];
+        id       = grp + '.' + new_item.key;
+    }
+
+    rid = id;
+
+    // item is defined in the importing character
+    if( cur_item = get_entry( id ) )
+    {
+        if( cur_item.noedit ) // oops item is read-only in our definition
+            return rid;
+
+        // predefined skill in importer:
+        // import at most base value and level
+        if( standard_skills[ id ] )
+        {
+            if( new_item.base != undefined )
+                cur_item.base = new_item.base;
+        }
+        else // user defined skill: import everything we have:
+        {
+            for( const x of Object.keys( new_item ) )
+                cur_item[ x ] = new_item[ x ];
+
+            for( const x of Object.keys( cur_item ) )
+                if( new_item[ x ] == undefined )
+                    delete cur_item[ x ];
+        }
+
+        var val  = new_item.val;
+        var base = entry_base( cur_item );
+
+        switch( cur_item.type )
+        {
+          case 'prune':
+            id = 'prune.' + cur_item.subkeys[ 0 ];
+            break;
+
+          case 'stat':
+            if( (base + val) > 0 )
+                if( !isNaN( bonus ) )
+                    val += bonus + base;
+            break;
+        }
+
+        // flush to UI and storage:
+        if( val != undefined )
+            set_dom_node_text( id, val, true );
+        else
+            set_dom_node_text( id, '', true );
+
+        return rid;
+    }
+    // item not yet defined in importer but was user defined in exporter
+    else if( new_item.key )
+    {
+        group.items.push( new_item );
+        draw_new_skill( group, new_item );
+        return rid;
+    }
+    else // oops. predefined item in exporter that no longer exists
+    {
+        return '';
+    }
+}
+
+function synthetic_click_delete (id)
+{
+    var button;
+    var delpath =
+        "//*[@class='delete-item'][@data-ge-id='" + id + "']";
+    var ui = xpath( delpath );
+
+    if( ui && ui.snapshotLength == 1 )
+        if( button = ui.snapshotItem( 0 ) )
+            delete_user_item.apply( button, null );
+}
+
+function is_in  (k,g) { return  k.startsWith( g + '.' ); }
+function not_in (k,g) { return !k.startsWith( g + '.' ); }
+
+function import_blob ()
+{
+    var iodata = get_dom_node( 'io-data' );
+
+    if( !iodata )
+        return;
+
+    var raw   = node_content( iodata );
+    var chunk;
+
+    if( raw = raw.split( GCSTART )[ 1 ] )
+        if( raw = raw.split( GCEND ) )
+            if( raw.length >= 2 )
+                chunk = raw[ 0 ];
+
+    if( !chunk )
+        return;
+
+    var lines = chunk.split( "\n" );
+    lines.pop();
+
+    var blob = '';
+    var m;
+    for( const l of lines )
+        if( m = (/^\s*(\S+)\s*$/m).exec( l ) )
+            blob += m[ 1 ];
+
+    var jstxt = atou( blob );
+    var data  = JSON.parse( jstxt );
+    var seen  = {};
+
+    // first personal info - no side effects
+    for( const key of Object.keys( data ).filter( k => is_in( k, 'personal-info' ) ) )
+        set_dom_node_text( key, data[ key ], true );
+
+    // next the stats so we set our group bonuses
+    for( const key of Object.keys( data ).filter( k => is_in( k, 'stats' ) ) )
+        for( const ig of data[ key ] )
+            seen[ import_item( key, ig ) ] = true;
+
+    // and the rest:
+    for( const key of Object.keys( data ).filter( k => not_in( k, 'stats' ) ) )
+        for( const ig of data[ key ] )
+            seen[ import_item( key, ig ) ] = true;
+
+    console.log( seen );
+    // delete any user-defined skills we currently have but
+    // which were not in the import:
+    var id;
+    for( const g of groups )
+        for( const i of g.items )
+            if( id = g.group + '.' + i.key )
+                if( !seen[ id ] )
+                    synthetic_click_delete( id );
+}
+
+function import_data ()
+{
+    var iopane = io_pane();
+    var load   = div( 'class', 'io-load' );
+
+    load.textContent = 'Load';
+    load.addEventListener( 'click', import_blob );
+
+    iopane.textContent = "Paste Data here:\n-----\n\n-----\n";
+    iopane.contentEditable = 'true';
+
+    iopane.parentElement.appendChild( load );
+}
+
+function toggle_io_ui ()
+{
+    var ui;
+
+    for( const id of ['save-button','load-button'] )
+        if( ui = get_dom_node( id ) )
+            ui.style.visibility =
+              (ui.style.visibility == 'visible') ? 'hidden' : 'visible';
+}
+
+// =========================================================================
 // input handling
 
 function eventstr (e)
@@ -2418,6 +2680,21 @@ function activate_buffctl ()
     }
 }
 
+function activate_io_buttons ()
+{
+    var node;
+
+    for( const x of [ [ 'io-button',   'click', toggle_io_ui ] ,
+                      [ 'save-button', 'click', export_data  ] ,
+                      [ 'load-button', 'click', import_data  ] ] )
+    {
+        if( !(node = get_dom_node( x[ 0 ] )) )
+            continue;
+        node.removeEventListener( x[ 1 ], x[ 2 ] );
+        node.addEventListener   ( x[ 1 ], x[ 2 ] );
+    }
+}
+
 var initialised = 0;
 
 function initialise ()
@@ -2463,6 +2740,8 @@ function initialise ()
     activate_dice();
 
     activate_buffctl();
+
+    activate_io_buttons();
 
     editable = activate_input_fields();
     if( !editable || editable.snapshotLength <= 0 )
