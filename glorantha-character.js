@@ -537,7 +537,7 @@ function handle_edit_event (e)
           break;
           
       case 'pinfo':
-          localStorage.setItem( id, val );
+          storage.set( id, val );
           break;
           
       case 'skill':
@@ -917,7 +917,7 @@ function _update_prune (p,i,val)
         node.textContent = other;
 
     var nv = JSON.stringify( p );
-    localStorage.setItem( 'prune.' + p.key, nv );
+    storage.set( 'prune.' + p.key, nv );
 
     return true;
 }
@@ -969,7 +969,7 @@ function update_item (i,v,norecurse)
 
             var nv = JSON.stringify( item );
             if( nv )
-                localStorage.setItem( i, nv );
+                storage.set( i, nv );
         }
 
         if( norecurse )
@@ -1565,7 +1565,7 @@ function delete_user_item (e)
     if( !standard_skills[ id ] )
         del_entry( id );
 
-    localStorage.removeItem( id );
+    storage.del( id );
 
     for( var n of [ skill, clicked ] )
         detach_from( n, "DL" );
@@ -2223,7 +2223,7 @@ function roll_hit_location (panel, node)
 
 function load_group_data ()
 {
-    for( const s of Object.keys( localStorage ) )
+    for( const s of storage.keys() )
     {
         var cur = get_entry( s );
 
@@ -2231,7 +2231,7 @@ function load_group_data ()
             continue;
         
         const id = split_id( s );
-        var   nv = localStorage.getItem( s );
+        var   nv = storage.get( s );
         const group_name = id[ 0 ];
         const entry_name = id[ 1 ];
         var   group = get_group( group_name );
@@ -2459,7 +2459,7 @@ function initialise ()
     for( n = 0; pinfo && (n < pinfo.snapshotLength); n++ )
         if( node = pinfo.snapshotItem( n ) )
             if( v = node.getAttribute( 'id' ) )
-                if( (v = localStorage.getItem( v )) != null )
+                if( (v = storage.get( v )) != null )
                     node.textContent = v;
 
     activate_dice();
