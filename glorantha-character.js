@@ -1499,17 +1499,8 @@ function detach_from (node, what)
 function delete_user_item (e)
 {
     var clicked = this;
-    var match   = xmatch_class( 'editable' );
-    var path    = ( "following-sibling::*/"  +
-                    "descendant-or-self::*[" + match + "][1]" );
-    var skill   = xpath( path, clicked.parentNode );
-
-    if( !skill || skill.snapshotLength != 1 )
-        return;
-
-    skill = skill.snapshotItem( 0 );
-
-    var id = skill.getAttribute( 'id' );
+    var id      = clicked.getAttribute( 'data-ge-id' );
+    var skill   = get_dom_node( id );
 
     if( !standard_skills[ id ] )
         del_entry( id );
