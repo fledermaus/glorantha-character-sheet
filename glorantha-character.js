@@ -473,7 +473,7 @@ function eventstr (e)
         if( prop == 'target' || prop == 'type' )
             estring += prop + ': ' + e[prop] + ', ';
 
-    estring += 'which' + ': ' + e.which    + ' ';    
+    estring += 'which' + ': ' + e.which    + ' ';
     estring += '} ';
 
     return estring;
@@ -502,7 +502,7 @@ function suppress_input (e)
 
     //console.log( ec + ':' + key );
     //console.log( eventstr(e) );
-    
+
     if( allowed_keys[ec] )
         if( !allowed_keys[ec][key] )
             e.preventDefault();
@@ -519,7 +519,7 @@ function handle_edit_event (e)
     var cat = split_id( id )[ 0 ];
     if( cat == 'personal-info' )
         uc = 'pinfo';
-    
+
     if( !uc )
         return;
 
@@ -528,18 +528,18 @@ function handle_edit_event (e)
 
     if ( !id || ( id == "") )
         return;
-    
+
     switch( uc )
     {
       case 'prune':
           name = split_id( id )[ 1 ];
           update_prune( name, val * 1 );
           break;
-          
+
       case 'pinfo':
           storage.set( id, val );
           break;
-          
+
       case 'skill':
       case 'attr':
           update_item( id, val );
@@ -716,14 +716,14 @@ function do_something (e)
 
     if( atype == 'hit' )
         return roll_hit_location( rnode, this );
-    
+
     if( rtype == 'dice' )
         return roll_ndxseq( rnode, target.textContent );
 
     if( atype == 'attr' )
         if( rtype == 'uint' )
             return setup_nx_roll( rnode, this, target.textContent );
-    
+
     if( atype == 'skill' && rtype == 'uint' )
     {
         var id = target.getAttribute( 'id' );
@@ -766,7 +766,7 @@ function get_group (grp)
 {
     var id = grp.split('.');
     grp = id[0];
-    
+
     for( const g of groups )
         if( g.group == grp )
             return g;
@@ -851,14 +851,14 @@ function group_modifier (g)
     var stat;
     var val;
     var ancestor;
-    
+
     if( !g.modifier )
         return g.bonus;
 
     if( g.modifier.inherit )
         if( ancestor = get_group( g.modifier.inherit ) )
             return group_modifier( ancestor );
-    
+
     if( g.modifier.primary )
         for( const s of g.modifier.primary )
             if( stat = get_entry( 'stats.' + s ) )
@@ -885,8 +885,6 @@ function group_modifier (g)
                                (val <= 16) ?  0 :
                                maths.ceil( (val - 16) / 4 ) * 5 );
 
-
-    
     return bonus;
 }
 
@@ -898,7 +896,7 @@ function _update_prune (p,i,val)
     var update;
     var node;
     var other = 100 - val;
-    
+
     i = i & 1;
 
     // paired runes actually only store the value of the
@@ -927,7 +925,7 @@ function update_prune (n,v)
     var tgt = null;
     var prg = get_group( 'prune' );
     var pe  = null;
-    
+
     if( !prg )
         return;
 
@@ -1028,7 +1026,7 @@ function _make_stat_value(dl, id, data, bonus, subtype)
     var sval = element( 'span' );
     var sbtn = element( 'span', 'data-ge-id', id );
     var base = entry_base( data );
-    
+
     switch( data.type )
     {
         case 'attr':
@@ -1036,14 +1034,14 @@ function _make_stat_value(dl, id, data, bonus, subtype)
         case 'rune':
         case 'emotion':
           cssc += 'uint';
-          val *= 1;  
+          val *= 1;
           break;
         case 'dice':
           cssc += 'dice';
           break;
         default:
           cssc += 'text';
-    } 
+    }
 
     // bonus is only added if either:
     // a) base is nonzero (ie skill has a nonzero default)
@@ -1071,7 +1069,7 @@ function _make_stat_value(dl, id, data, bonus, subtype)
 
     sbtn.style.float = 'left';
     sbtn.style.width = '2em';
-    
+
     dd.appendChild( sbtn );
     dd.appendChild( sval );
     dl.appendChild( dd  );
@@ -1249,7 +1247,7 @@ function add_stat_groups ()
             grp.parentNode.removeChild( grp );
             continue;
         }
-        
+
         var grp = div( 'id', g.group + '-container', 'class', 'group' );
 
         if( g.modifier )
@@ -1272,7 +1270,7 @@ function add_stat_groups ()
                 grp.appendChild( add );
             }
         }
-        
+
         var lst = element( 'dl', 'id', g.group );
         var width = group_label_col_width( g );
 
@@ -1285,7 +1283,7 @@ function add_stat_groups ()
     }
 
     var banner = document.getElementById( 'groups' );
-    
+
     for( const i of new_groups )
         banner.appendChild( i );
 }
@@ -1306,7 +1304,7 @@ function refresh_group (g)
         return;
 
     var new_bonus = group_modifier( g );
-    
+
     if( g.bonus == new_bonus )
         return
 
@@ -1315,7 +1313,7 @@ function refresh_group (g)
     var title = document.getElementById( g.group + '-title' );
     if( title )
         title.textContent = group_title( g );
-    
+
     var inode;
     for( const i of g.items )
         if( inode = document.getElementById( g.group + '.' + i.key ) )
@@ -1371,7 +1369,7 @@ function field_widget (f,g)
     var wid   = 'new-item-widget-' + f.name;
     var label = div( 'class', 'new-item-field-label'  );
     label.textContent  = ucfirst( f.name ) + ':';
-    
+
     if( typeof( etype ) == "string" )
     {
         var ec = 'new-item-field-widget editable ' + etype;
@@ -1408,7 +1406,7 @@ function draw_default_input_form (grp, type)
 
     var template = extn_template[ type ];
     var group    = get_group( grp );
-    
+
     if( !template || !group )
         return;
 
@@ -1654,10 +1652,10 @@ function calc_enc ()
 
     if( !enc )
         return;
-    
+
     var sv  = str.val * 1;
     var cv  = con.val * 1;
-    
+
     enc.textContent = '' + ( (sv <= cv) ? sv : (maths.round( (sv + cv) / 2 )) );
 }
 
@@ -1716,7 +1714,7 @@ function calc_sp_dam ()
         return;
 
     var val = (pow.val * 1) + (cha.val * 1);
-    
+
     spd.textContent =
         ( (val <= 12) ? '1d3'   :
           (val <= 24) ? '1d6'   :
@@ -1737,7 +1735,7 @@ function calc_damage ()
         return;
 
     var val = (str.val * 1) + (siz.val * 1);
-    
+
     dam.textContent =
         ( (val <= 12) ? '-1d4' :
           (val <= 24) ? '0'    :
@@ -1765,7 +1763,7 @@ function calc_max_hp ()
 
     if( !con || !siz || !pow )
         return;
-    
+
     var cv = con.textContent * 1;
     var sv = siz.textContent * 1;
     var pv = pow.textContent * 1;
@@ -1915,7 +1913,7 @@ function roll_d100 (result, skill, prefix)
     {
         if( result )
             result.textContent = (prefix ? prefix + " " : '') + 'Unavailable';
-        
+
         return [ undefined, 'UNAVAILABLE' ];
     }
     var rolled = maths.floor( maths.random() * 100 ) + 1;
@@ -1934,7 +1932,7 @@ function roll_d100 (result, skill, prefix)
     // 00 always fumbles
     if( fumble > 100 )
         fumble = 100;
-    
+
     if( rolled == 1 || rolled <= crit )
         label = "CRIT!";
     else if( rolled <= spec )
@@ -2002,7 +2000,7 @@ function roll_ndx (ndx)
 
     for(var i = 0; i < n; i++)
         r += maths.floor( maths.random() * x )  + 1;
-    
+
     return r;
 }
 
@@ -2015,7 +2013,7 @@ function roll_ndxseq (result, skill)
     var m;
     while( m = ndxre.exec( skill ) )
         dice.push( m[0] );
-    
+
     for( const d of dice )
     {
         var r = 0;
@@ -2033,7 +2031,7 @@ function roll_ndxseq (result, skill)
         clear_element( result, '🎲' );
         result.textContent = dice.join(' ') + ' = ' + rolled;
     }
-    
+
     return rolled;
 }
 
@@ -2051,7 +2049,7 @@ function roll_nx (e)
 
     if( !attr || ! panel )
         return undefined;
-    
+
     var stat  = attr.textContent * 1;
     var multi = found[1] * 1;
     var text  = label ? label.textContent : '';
@@ -2059,7 +2057,7 @@ function roll_nx (e)
     if( multi > 1 )
         if( text = text.replace( /:\s*/, '' ) )
             text += '×' + multi + ': ';
-    
+
     if( attr && panel )
         return roll_d100( panel, stat * multi, text );
 
@@ -2095,7 +2093,7 @@ function setup_nx_roll (panel, node, attr)
 
     if( node && node.parentNode )
         prev = node.parentNode.previousElementSibling;
-    
+
     if( prev )
     {
         var ldiv = div( 'id', 'rlabel', 'class', 'rlabel' );
@@ -2202,7 +2200,7 @@ function roll_hit_location (panel, node)
             case 20:
                 name = 'head';
                 break;
-            default:                
+            default:
           }
           break;
       default:
@@ -2229,7 +2227,7 @@ function load_group_data ()
 
         if( cur && cur.noedit ) // non-editable element, ignore cached values
             continue;
-        
+
         const id = split_id( s );
         var   nv = storage.get( s );
         const group_name = id[ 0 ];
@@ -2443,7 +2441,7 @@ function initialise ()
             standard_skills[ g.group + '.' + i.key ] = true;
 
     load_group_data();
-    
+
     add_stat_groups();
 
     calc_max_hp();
@@ -2454,7 +2452,7 @@ function initialise ()
     calc_siz_sr();
     calc_enc();
     calc_mp();
-    
+
     pinfo = xpath( pinfo_pat );
     for( n = 0; pinfo && (n < pinfo.snapshotLength); n++ )
         if( node = pinfo.snapshotItem( n ) )
@@ -2469,7 +2467,7 @@ function initialise ()
     editable = activate_input_fields();
     if( !editable || editable.snapshotLength <= 0 )
         return 0;
-    
+
     // carriage return, newline
     for( const c in suppressed_keys )
         for( const k of [0xa, 0xd] )
@@ -2488,7 +2486,7 @@ function initialise ()
     // base-spec (eg "stats.dex*3" or "15")
     for( var i = 0; i < base_allowed.length; i++ )
         allowed_keys['base'][base_allowed.charCodeAt( i )] = true;
-    
+
     // since the order is allow/deny with a first-match-wins strategy
     // we must specifically allow movement keys for restricted input
     // classes like uint: arrow keys + bs tab del
