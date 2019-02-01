@@ -316,6 +316,53 @@ var groups =
 const pinfo_pat = "//*[starts-with(@id, 'personal-info.')]";
 
 // =========================================================================
+// storage abstraction
+var _storage_prefix = undefined;
+function spfx ()
+{
+    if( _storage_prefix != undefined )
+        return _storage_prefix;
+
+    var match;
+    if( match = /\??([^&;:]+)/.exec( location.search ) )
+        _storage_prefix = match[ 1 ] + ':'
+    else
+        _storage_prefix = '';
+
+    return _storage_prefix;
+}
+
+function storage_get (k)
+{
+    return localStorage.getItem( spfx() + k );
+}
+
+function storage_set (k,v)
+{
+    return localStorage.setItem( spfx() + k, v );
+}
+
+function storage_zap (k)
+{
+    return localStorage.removeItem( spfx() + k )
+}
+
+function storage_keys ()
+{
+    var pfx = spfx();
+    var len = pfx.length;
+    return len ?
+        ( Object.keys( localStorage )
+          .filter( k => k.startsWith( pfx ) ).map( s => s.substring( len ) ) ) :
+        ( Object.keys( localStorage )
+          .filter( k => k.startsWith( pfx ) ) );
+}
+
+const storage = { get:  storage_get ,
+                  set:  storage_set ,
+                  keys: storage_keys,
+                  del:  storage_zap };
+// =========================================================================
 // utilities
 
 const ucfre = /\b([a-z])/g;
