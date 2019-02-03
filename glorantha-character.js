@@ -91,6 +91,10 @@ var extn_template =
                            type: ['hate','love','loyalty','devotion'] },
                          { name: 'subject', type: 'text' } ,
                          { name: 'level',   type: 'uint' } ] },
+    rp:      { save:   add_new_rp,
+               draw:   draw_default_input_form,
+               fields: [ { name: 'deity',  type: 'text' } ,
+                         { name: 'points', type: 'uint' } ] },
     // rune:    { save: add_new_rune,
     //            draw: draw_rune_input_form,
     //            fields: [ { name: 'label', type: 'text' } ,
@@ -154,6 +158,11 @@ var groups =
                { key: 'vitality'   , type: 'prune', subkeys: [ 'fertility', 'death'    ], val: 50 } ,
                { key: 'variability', type: 'prune', subkeys: [ 'harmony'  , 'disorder' ], val: 50 } ,
                { key: 'viricity'   , type: 'prune', subkeys: [ 'man'      , 'beast'    ], val: 50 } ] },
+    { group: 'rp',
+      label: 'Rune Points',
+      draw:   true,
+      extend: 'rp',
+      items:  [] },
     { group: 'emo',
       label: 'Passions',
       extend: 'emotion',
@@ -817,6 +826,10 @@ function handle_edit_event (e)
           update_item( id, val );
           break;
 
+      case 'rp':
+          update_rp( id, val );
+          break;
+
       case 'manual-buff':
           manual_buff_val = val * 1;
           break;
@@ -1079,7 +1092,7 @@ function editclass (node)
 function updateclass (node)
 {
     var nc = ' ' + node.getAttribute('class') + ' ';
-    for( const c of ['pinfo', 'skill', 'attr', 'prune', 'hit', 'manual-buff'] )
+    for( const c of ['pinfo', 'skill', 'attr', 'prune', 'hit', 'rp', 'manual-buff'] )
         if( nc.indexOf( ' ' + c + ' ') >= 0 )
             return c;
 
@@ -1214,6 +1227,30 @@ function group_modifier (g)
 
 // =========================================================================
 // cache update mechanisms
+function update_rp (id,val)
+{
+    var m;
+    var rid = id;
+
+    if( !id )
+        return;
+
+    if( m = /^(rp\..+?)\.cur$/.exec( id ) )
+        rid = m[ 1 ];
+
+    var pool = get_entry( rid );
+
+    if( m )
+        pool.cur = val * 1;
+    else
+        pool.val = val * 1;
+
+    var nv = JSON.stringify( pool );
+    storage.set( rid, nv );
+
+    return true;
+}
+
 
 function _update_prune (p,i,val)
 {
@@ -1399,6 +1436,30 @@ function _make_stat_value(dl, id, data, bonus, subtype)
     dl.appendChild( dd  );
 }
 
+function make_rp (dl, id, data)
+{
+    var dd   = element( 'dd' );
+    var val  = data.val;
+    var cur  = data.cur;
+    var cssc = 'editable rp uint';
+    var sval = element( 'span', 'id', id, 'class', cssc );
+    var scur = element( 'span', 'id', id + '.cur' ,'class', cssc );
+    var sbtn = element( 'span', 'data-ge-id', id );
+
+    sval.textContent = '' + val;
+    scur.textContent = '' + cur;
+
+    sbtn.textContent = ' ';
+
+    sbtn.style.width = '2em';
+
+    dd.appendChild( sbtn );
+    dd.appendChild( scur );
+    dd.appendChild( document.createTextNode(' / ') );
+    dd.appendChild( sval );
+    dl.appendChild( dd  );
+}
+
 function make_stat_value (dl, id, data, bonus)
 {
     _make_stat_value( dl, id, data, bonus, 'skill' );
@@ -1535,6 +1596,9 @@ function make_item (dl, group, data, width, bonus)
           break;
       case 'tick':
           make_tick( dl, id, data );
+          break;
+      case 'rp':
+          make_rp( dl, id, data );
           break;
       case 'stat':
       case 'rune':
@@ -1714,6 +1778,41 @@ function draw_new_tick (skill)
 
     if( !sval )
         make_item( lst, 'ticks', skill, width, 0 );
+
+    var row = xpath( 'dt', lst );
+
+    if( row )
+        for( var i = 0; i < row.snapshotLength; i++ )
+            row.snapshotItem( i ).style.width = width;
+
+    update_item( sid, skill.val );
+}
+
+// add a skill to the group (or refresh if it's already there)
+function draw_new_rp (group, skill)
+{
+    if( !group || !group.group )
+        return;
+
+    var lst   = document.getElementById( group.group );
+
+    if( !lst )
+        return;
+
+    var gid   = lst.getAttribute( 'id' );
+    var sid   = gid + '.' + skill.key;
+    var width = group_label_col_width( group );
+    var sval  = document.getElementById( sid );
+
+    if( sval )
+    {
+        sval.textContent = '' + skill.val;
+    }
+    else
+    {
+        var iel = make_item( lst, gid, skill, width, 0 );
+        activate_input_fields( iel, "after" );
+    }
 
     var row = xpath( 'dt', lst );
 
@@ -1999,6 +2098,34 @@ function add_new_skill (form_data)
                   base: base, val: level };
     group.items.push( skill );
     draw_new_skill( group, skill );
+    return true;
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function add_new_rp (form_data)
+{
+    var group = get_group( form_data.group );
+
+    if( !group )
+        return "Cannot add entry to group " + form_data.group;
+
+    var label = form_data.deity;
+    var total = form_data.points * 1;
+    var key   = label_to_key( label );
+
+    if( !key )
+        return "'" + label + "' is not a useful deity name";
+
+    if( total < 0 )
+        return "Total (" + level + ") cannot be less than zero";
+
+    var exists;
+    if( exists = get_entry( group.group + '.' + key ) )
+        return "Link to " + item_label( exists ) + " already exists";
+
+    var skill = { key: key, type: 'rp', label: label, cur: total, val: total };
+    group.items.push( skill );
+    draw_new_rp( group, skill );
     return true;
 }
 
