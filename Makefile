@@ -3,7 +3,7 @@
 .PHONY: publish
 
 PUBLISH_TO := platypus.pepperfish.net:public_html/glorantha/
-EXCLUDE := .git Makefile mapping \*~ import-test.html *.xml table-border.html
+EXCLUDE := .git\* Makefile mapping \*~ import-test.html *.xml table-border.html
 EXFLAGS := $(foreach x,$(EXCLUDE),--exclude $(x))
 
 all:
