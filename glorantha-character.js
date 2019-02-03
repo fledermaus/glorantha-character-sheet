@@ -469,16 +469,15 @@ const GCEND   = "-----END GLORANTHA CHARACTER-----\n";
 
 function close_io_pane (e)
 {
-    var iopane;
+    var iopane = get_dom_node( 'import-export' )
 
-    if( this )
-        if( iopane = this.parentElement )
-            iopane.parentElement.removeChild( iopane );
+    if( iopane )
+        iopane.parentElement.removeChild( iopane );
 }
 
 function io_pane ()
 {
-    var panel  = div( 'class', 'import-export' );
+    var panel  = div( 'id', 'import-export', 'class', 'import-export' );
     var iopane = element( 'pre', 'id', 'io-data', 'class', 'io-data' );
     var cancel = div( 'class', 'io-cancel' );
 
@@ -698,6 +697,8 @@ function import_blob ()
             if( id = g.group + '.' + i.key )
                 if( !seen[ id ] )
                     synthetic_click_delete( id );
+
+    close_io_pane();
 }
 
 function import_data ()
