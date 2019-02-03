@@ -9,6 +9,12 @@ var manual_buff_val   = 0;
 var auto_buff_on      = false;
 var auto_buff_val     = 0;
 
+// this is used when we want to tick a skill
+// theoretically it should be mutually exclusive
+// [or perhaps form a lifo] with auto_buff_on
+// but I have chosen not to care about this.
+var tick_pending      = false;
+
 // this works a little differently than the
 // other two: buff_on here means the next roll
 // should _create_ a buff_val
@@ -311,6 +317,10 @@ var groups =
       items: [ { key: 'fist',    type: 'stat', label: "Fist",    base:  5, val: 0 } ,
                { key: 'grapple', type: 'stat', label: "Grapple", base: 10, val: 0 } ,
                { key: 'kick',    type: 'stat', label: "Kick",    base: 10, val: 0 } ] },
+    { group: 'ticks',
+      label: 'Ticks',
+      draw:   true  ,
+      items:  []    },
 ];
 
 const pinfo_pat = "//*[starts-with(@id, 'personal-info.')]";
@@ -884,6 +894,47 @@ function unset_inspired_skill (e)
     return true;
 }
 
+function tick_skill (id, panel)
+{
+    var ticks = get_group( 'ticks' );
+    var label;
+    var m;
+
+    if( tick_pending )
+        tick_pending = false;
+    else
+        return;
+
+    if( !ticks )
+        return clear_element( panel, 'Ticks data missing - character sheet error' );
+
+    if( m = /^prune\.(.+)$/.exec( id ) )
+    {
+        var rune = m[1];
+        label = ucfirst( rune );
+    }
+    else
+    {
+        var skill = get_entry( id );
+        if( !skill )
+            return clear_element( panel, 'Skill ' + id + ' not found' );
+        label = item_label( skill );
+    }
+
+
+
+    for( const t of ticks.items )
+        if( t.key == id )
+            return ( panel ?
+                     clear_element( panel, label + ' already ticked' ) :
+                     false );
+
+    var new_tick = { key: id, type: 'tick', label: label, val: 1 };
+    ticks.items.push( new_tick );
+    draw_new_tick( new_tick );
+    clear_element( panel, '🎲 ' + label + ' ticked' );
+}
+
 function buff_value_for (id)
 {
     var skill;
@@ -973,9 +1024,16 @@ function do_something (e)
     var rtype  = editclass( target );
     var atype  = updateclass( target );
     var rnode  = document.getElementById( 'result' );
+    var id     = target.getAttribute( 'id' );
 
     if( atype == 'prune' )
+    {
+        // next consume and apply the tick-pending flag:
+        if( tick_pending )
+            return tick_skill( id, rnode );
+
         return roll_prune( rnode, this, target );
+    }
 
     if( atype == 'hit' )
         return roll_hit_location( rnode, this );
@@ -989,11 +1047,15 @@ function do_something (e)
 
     if( atype == 'skill' && rtype == 'uint' )
     {
-        var id = target.getAttribute( 'id' );
-
+        // resolve auto-buff (inspiration) first
         if( auto_buff_on == 'unselected' )
             if( set_inspired_skill( id, rnode ) )
                 return;
+
+        // next consume and apply the tick-pending flag:
+        if( !/^personal-info\./.exec( id ) )
+            if( tick_pending )
+                return tick_skill( id, rnode );
 
         var adjusted_skill = (target.textContent * 1) + buff_value_for( id );
         return roll_d100( rnode, adjusted_skill, roll_label( this ) );
@@ -1348,6 +1410,19 @@ function make_attr_value (dl, id, data, bonus)
     _make_stat_value( dl, id, data, bonus, 'attr' );
 }
 
+function make_tick (dl, id, data)
+{
+    var dd   = element( 'dd' );
+    var sval = element( 'span' );
+
+    sval.setAttribute( 'id', id );
+    sval.textContent = '✔';
+    sval.style.width = '5em';
+
+    dd.appendChild( sval );
+    dl.appendChild( dd  );
+}
+
 function make_paired_roll_button (id, rune)
 {
     var btn  = div( 'class'     , 'roll',
@@ -1458,6 +1533,9 @@ function make_item (dl, group, data, width, bonus)
           break;
       case 'prune':
           make_paired_value( dl, data );
+          break;
+      case 'tick':
+          make_tick( dl, id, data );
           break;
       case 'stat':
       case 'rune':
@@ -1622,6 +1700,31 @@ function draw_new_skill (group, skill)
 
     update_item( sid, '' + score );
 }
+
+function draw_new_tick (skill)
+{
+    var ticks = get_group( 'ticks' );
+    var lst   = get_dom_node( 'ticks' );
+
+    if( !lst )
+        return;
+
+    var sid   = 'ticks.' + skill.key;
+    var width = group_label_col_width( ticks );
+    var sval  = get_dom_node( sid );
+
+    if( !sval )
+        make_item( lst, 'ticks', skill, width, 0 );
+
+    var row = xpath( 'dt', lst );
+
+    if( row )
+        for( var i = 0; i < row.snapshotLength; i++ )
+            row.snapshotItem( i ).style.width = width;
+
+    update_item( sid, skill.val );
+}
+
 // =========================================================================
 // UI for new skills/runes etc
 
@@ -2634,6 +2737,24 @@ function set_manual_buff (e)
     }
 }
 
+function toggle_tick_pending (e)
+{
+    var panel = get_dom_node( 'result' );
+
+    if( tick_pending )
+    {
+        if( panel )
+            clear_element( panel, '🎲' );
+
+        tick_pending = false;
+        return;
+    }
+
+    tick_pending = true;
+    if( panel )
+        clear_element( panel, '🎲 ← Activate a skill or rune to tick it' );
+}
+
 function activate_buffctl ()
 {
     var karate = get_dom_node( 'wax-on-wax-off' );
@@ -2696,6 +2817,17 @@ function activate_io_buttons ()
     }
 }
 
+function activate_tick_button ()
+{
+    var node;
+
+    if( !(node = get_dom_node( 'tick-button' )) )
+        return;
+
+    node.removeEventListener( 'click', toggle_tick_pending );
+    node.addEventListener   ( 'click', toggle_tick_pending );
+}
+
 var initialised = 0;
 
 function initialise ()
@@ -2743,6 +2875,8 @@ function initialise ()
     activate_buffctl();
 
     activate_io_buttons();
+
+    activate_tick_button();
 
     editable = activate_input_fields();
     if( !editable || editable.snapshotLength <= 0 )
