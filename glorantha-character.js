@@ -930,10 +930,12 @@ function tick_skill (id, panel)
         var skill = get_entry( id );
         if( !skill )
             return clear_element( panel, 'Skill ' + id + ' not found' );
+
         label = item_label( skill );
+
+        if( split_id( id )[0] == 'lore' )
+            label = 'Lore: ' + label;
     }
-
-
 
     for( const t of ticks.items )
         if( t.key == id )
