@@ -1053,6 +1053,10 @@ function do_something (e)
     if( rtype == 'dice' )
         return roll_ndxseq( rnode, target.textContent );
 
+    // special case: POW can be ticked
+    if( tick_pending && (id == 'stats.pow') )
+        return tick_skill( id, rnode );
+
     if( atype == 'attr' )
         if( rtype == 'uint' )
             return setup_nx_roll( rnode, this, target.textContent );
