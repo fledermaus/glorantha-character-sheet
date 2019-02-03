@@ -698,7 +698,6 @@ function import_blob ()
         for( const ig of data[ key ] )
             seen[ import_item( key, ig ) ] = true;
 
-    console.log( seen );
     // delete any user-defined skills we currently have but
     // which were not in the import:
     var id;
