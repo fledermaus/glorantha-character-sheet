@@ -2786,6 +2786,12 @@ function clear_element (e,text)
     return;
 }
 
+function clear_results (e)
+{
+    clear_element( this, '🎲' );
+    return;
+}
+
 function choose_axis (a)
 {
     switch( a )
@@ -2972,6 +2978,17 @@ function activate_tick_button ()
     node.addEventListener   ( 'click', toggle_tick_pending );
 }
 
+function activate_rpanel ()
+{
+    var node;
+
+    if( !(node = get_dom_node( 'result' )) )
+        return;
+
+    node.removeEventListener( 'click', clear_results );
+    node.addEventListener   ( 'click', clear_results );
+}
+
 var initialised = 0;
 
 function initialise ()
@@ -3021,6 +3038,8 @@ function initialise ()
     activate_io_buttons();
 
     activate_tick_button();
+
+    activate_rpanel();
 
     editable = activate_input_fields();
     if( !editable || editable.snapshotLength <= 0 )
