@@ -1,0 +1,45 @@
+HTML, Javascript:
+  glorantha-character.html
+  glorantha-character.js
+Author: Vivek Das Mohapatra <vivek@etla.org>,
+                            <vivek@collabora.com>
+Declaration: These files are original works, not derived from any other(s)
+SPDX-License-Identifier: AGPL-3.0-or-later
+Licence: http://www.gnu.org/licenses/agpl-3.0.html
+Copyright: Copyright © 2019 Vivek Das Mohapatra <vivek@etla.org>, <vivek@collabora.com>
+
+Media:
+  silhouette-f.svg: https://commons.wikimedia.org/wiki/File:Female_shadow.svg
+  silhouette-m.svg: https://commons.wikimedia.org/wiki/File:Human_body_silhouette.svg
+Author: https://commons.wikimedia.org/wiki/User:Mikael_H%C3%A4ggstr%C3%B6m
+Licence:
+  I, the copyright holder of this work, release this work into the
+  public domain. This applies worldwide.  In some countries this may not
+  be legally possible; if so: I grant anyone the right to use this work
+  for any purpose, without any conditions, unless such conditions are
+  required by law.
+Minor modifications:
+  All: Colour, transparency
+  Female_shadow.svg: shields added to image
+
+Fonts:
+
+FreeSans: http://savannah.gnu.org/projects/freefont/
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Symbola_hint: http://users.teilar.gr/~g1951d/
+Author: George Douros <g1951d@teilar.gr>
+Licence: http://users.teilar.gr/~g1951d/License.pdf
+Comments: Free for non-commercial use, may not be modified or distributed.
+          Unclear if delivering it with a web page is covered by this,
+          if objections are raised, may have to remove.
+
+Assorted Noto fonts: https://www.google.com/get/noto/
+Author: Misc, see above
+Licence: http://scripts.sil.org/cms/scripts/page.php?site_id=nrsi&id=OFL
+SPDX-License-Identifier: OFL-1.1
+
+unifont_upper.ttf: http://unifoundry.com
+SPDX-License-Identifier: GPL-2.0-or-later
+Comment: Licence exception - embedding the font in a document
+         does not bring the document under the GPL
