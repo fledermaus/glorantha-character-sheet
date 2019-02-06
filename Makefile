@@ -14,4 +14,4 @@ debug-publish: NOOP := -n
 debug-publish: publish
 
 publish:
-	@rsync $(EXFLAGS) $(NOOP) -ravL ./ $(PUBLISH_TO)
+	@rsync $(EXFLAGS) $(NOOP) --delete -ravL ./ $(PUBLISH_TO)
