@@ -1196,7 +1196,7 @@ function set_inspired_skill (id, panel)
     if( inspired )
     {
         inspired.textContent =
-            label + ((auto_buff_val >= 0) ? ' + ' : '') + auto_buff_val;
+            label + ((auto_buff_val >= 0) ? ' +' : ' ') + auto_buff_val;
         inspired.style.visibility = 'visible';
     }
 
