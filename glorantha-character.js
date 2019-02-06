@@ -390,7 +390,7 @@ function storage_keys ()
         ( Object.keys( localStorage )
           .filter( k => k.startsWith( pfx ) ).map( s => s.substring( len ) ) ) :
         ( Object.keys( localStorage )
-          .filter( k => k.startsWith( pfx ) ) );
+          .filter( k => !k.match( /^.*:\S+?\.\S+/ ) ) );
 }
 
 const storage = { get:  storage_get ,
