@@ -48,24 +48,51 @@ var allowed_keys =
         'base': [],
     };
 
-const rune_glyph = { darkness:  '●',
-                     water:     '♒' , // ꤾ  𐦊
-                     earth:     '□',
-                     air:       'ᘎ', // ᠖
-                     'fire/sky':'⦿',
-                     moon:      'ⵀ', // UP AND RIGHT
-                     chaos:     '☣',
-                     movement:  '𐤸',
-                     stasis:    '⌓',
-                     truth:     '𝗬',
-                     illusion:  '⛬',
-                     fertility: 'ⴵ', // ⧖
-                     death:     '✝',
-                     harmony:   'Ⅲ', // 𝍫
-                     disorder:  '𖥱',
-                     man:       '☥', // 'ಗ̊', // 'గీ', // '𐀼̯', // ⟟̵̭ ⫯̵̯
-                     beast:     '▽',
-                     plant:     '𐙋' }; // ᪴
+const rune_glyph = { darkness:       '' ,// e000
+                     water:          '' ,// e001
+                     earth:          '' ,// e002
+                     air:            '' ,// e003
+                     'fire/sky':     '' ,// e004
+                     moon:           '' ,// e005
+                     chaos:          '' ,// e02c
+                     movement:       '' ,// e025
+                     stasis:         '' ,// e024
+                     truth:          '' ,// e026
+                     illusion:       '' ,// e027
+                     fertility:      '' ,// e022
+                     death:          '' ,// e023
+                     harmony:        '' ,// e020
+                     disorder:       '' ,// e021
+                     man:            '' ,// e028
+                     beast:          '' ,// e029
+                     plant:          '' ,// e02a
+                     spirit:         '' ,// e02b
+                     infinity:       '' ,// e030
+                     mastery:        '' ,// e031
+                     magic:          '' ,// e032
+                     communication:  '' ,// e033
+                    'eternal-battle':'' ,// e034
+                     maker:          '' ,// e035
+                     luck:           '' ,// e036
+                     fate:           '' ,// e037
+                     light:          '' ,// e038
+                     cold:           '' ,// e039
+                     law:            '' ,// e03a
+                     undeath:        '' ,// e03b
+                     barntar:        '' ,// e03c
+                     odayla:         '' ,// e03d
+                     yinkin:         '' ,// e03e
+                     malkion:        '' ,// e03f
+                     shargash:       '' ,// e040
+                     heler:          '' ,// e041
+                     lightbringer:   '' ,// e042
+                     god:            '' ,// e043
+                     sartar:         '' ,// e050
+                     pamalt:         '' ,// e051
+                     hell:           '' ,// e052
+                     dragonewt:      '' ,// e060
+                     dragon:         '' ,// e061
+                   };
 
 const attr_map = { 'stats.con':  [ calc_max_hp, calc_healrate, calc_enc    ] ,
                    'stats.siz':  [ calc_max_hp, calc_damage,   calc_siz_sr ] ,

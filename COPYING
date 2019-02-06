@@ -27,19 +27,27 @@ Fonts:
 FreeSans: http://savannah.gnu.org/projects/freefont/
 SPDX-License-Identifier: GPL-3.0-or-later
 
-Symbola_hint: http://users.teilar.gr/~g1951d/
-Author: George Douros <g1951d@teilar.gr>
-Licence: http://users.teilar.gr/~g1951d/License.pdf
-Comments: Free for non-commercial use, may not be modified or distributed.
-          Unclear if delivering it with a web page is covered by this,
-          if objections are raised, may have to remove.
-
 Assorted Noto fonts: https://www.google.com/get/noto/
 Author: Misc, see above
 Licence: http://scripts.sil.org/cms/scripts/page.php?site_id=nrsi&id=OFL
 SPDX-License-Identifier: OFL-1.1
 
-unifont_upper.ttf: http://unifoundry.com
-SPDX-License-Identifier: GPL-2.0-or-later
-Comment: Licence exception - embedding the font in a document
-         does not bring the document under the GPL
+Gloranthan-Runes: remapped https://www.glorantha.com/docs/glorantha-core-rune-font/
+Note:
+I have relocated the chars to the private use area of unicode, but not
+modified them. I don't know if this counts as "modifying the font", IANAL.
+If you want to use this remapping of the font rather then the original
+You will have to come to your own conclusion about the legality thereof.
+
+Licence:
+The Glorantha Core Font is used by Moon Design in their
+publications. It is a compilation of the most useful characters from
+the 42 or so fonts created in the 2000s by Greg Stafford. It’s
+provided here for use in your games.
+
+Glorantha Core Runes is Copyright © 2016 Moon Design Publications.
+Permission is granted for personal or fanzine use only, as long as a
+credit and copyright notice is included, the font is not altered,
+and no fee of any kind is charged for its use.
+
+The current version 1.5 was released on 27 Jan 2016

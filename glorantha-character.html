@@ -13,24 +13,10 @@
                    url("glorantha-fonts/FreeSans.otf") format("opentype"),
                    url("glorantha-fonts/FreeSans.ttf") format("truetype"); }
 
-      @font-face { font-family: lydian;
-                   src: local("Noto Sans Lydian"),
-                   url("glorantha-fonts/notosanslydian-regular-webfont.woff2") format("woff2"),
-                   url("glorantha-fonts/notosanslydian-regular-webfont.woff") format("woff"),
-                   url("glorantha-fonts/notosanslydian-regular-webfont.svg") format("svg"),
-                   url("glorantha-fonts/NotoSansLydian-Regular.ttf") format("truetype"); }
-
-      @font-face { font-family: glorantha-uuni;
-                   src: local("unifont upper"),
-                   url("./glorantha-fonts/unifont_upper.ttf") format("truetype"); }
-
-      @font-face { font-family: glorantha-symbola;
-                   src: local("Symbola"),
-                   url("./glorantha-fonts/Symbola_hint.ttf") format("truetype"); }
-
-      @font-face { font-family: glorantha-bamum;
-                   src: local("Noto Sans Bamum"),
-                   url("./glorantha-fonts/NotoSansBamum-Regular.ttf") format("truetype"); }
+      @font-face { font-family: runes;
+                   src:
+                   url("glorantha-fonts/gloranthan-runes.woff") format("woff"),
+                   url("glorantha-fonts/gloranthan-runes.ttf") format("truetype"); }
 
       @font-face { font-family: emoji;
                    src: local("Noto Color Emoji"),
@@ -39,12 +25,9 @@
                    url("./glorantha-fonts/NotoEmoji-Regular.ttf") format("truetype"); }
 
       body { background-color: rgb(0,0,0); color: rgb(255,255,255);
-             font-family: "glorantha-sans",
+             font-family: "runes",
+                          "glorantha-sans",
                           "emoji",
-                          "lydian",
-                          "glorantha-uuni",
-                          "glorantha-symbola",
-                          "glorantha-bamum",
                           "Sans"; }
 
       div  { border: 0px; border-radius: 3px; padding: 1px;
