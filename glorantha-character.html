@@ -59,11 +59,28 @@
       .chinfo       { padding: 4px; border: 2px solid white; clear: left; width: 100%; }
       .dice-bag     { padding: 4px; clear: left; width: 100%; border: 2px solid white; }
 
-      #io-ui         { float: left; width: 100%;
+      #misc-ui       { float: left; width: 100%;
                        border: 2px solid white; display: flex; flex-direction: row; }
+
+      #rgb-button     { clear: none; float: left; cursor: pointer;
+                        padding: 4px; display: flex; }
+      #palette        { border-radius: 5px;
+                        background-color: rgb(0,0,0);
+                        color: rgb(255,255,255);
+                        padding: 5px; position: fixed; top: 20px; left: 20px;
+                        z-index: 20; border: 2px solid white; display: grid;
+                        grid-template-columns: 2em 5fr 5fr;
+                        max-height: 80%; max-width: 80%; overflow: auto;
+                        text-align: center;
+                        visibility: collapse; }
+      #palette .r     { display: grid; grid-column: 1 / 2; color: red;   }
+      #palette .g     { display: grid; grid-column: 1 / 2; color: green; }
+      #palette .b     { display: grid; grid-column: 1 / 2; color: blue;  }
+      #palette .range { display: grid; grid-column: 2 / 4; }
+      #palette div    { display: grid; border: 1px dashed gray; cursor: pointer; }
+
       #io-button     { clear: none; float: right; cursor: pointer;
                        padding: 4px; display: flex ;}
-
       #load-button   { clear: both; float: right; cursor: pointer;
                        padding: 4px; visibility: hidden; display: flex; flex: auto; }
       #save-button   { clear: both; float: right; cursor: pointer;
@@ -232,7 +249,25 @@
             </dd>
           </dl>
         </div>
-        <div id="io-ui">
+        <div id="palette">
+          <div id="close-palette" class="button" title="Close">⏻</div>
+          <div id="reset-palette" class="cancel" title="Reset All">Reset All</div>
+          <div id="save-palette"  class="exec"   title="Save">Save</div>
+          <div class="r">R</div>
+          <div class="range">
+            <input id="rr" name="rr" type="range" min="0" max="255"/>
+          </div>
+          <div class="g">G</div>
+          <div class="range">
+            <input id="rg" name="rg" type="range" min="0" max="255"/>
+          </div>
+          <div class="b">B</div>
+          <div class="range">
+            <input id="rb" name="rb" type="range" min="0" max="255"/>
+          </div>
+        </div>
+        <div id="misc-ui">
+          <div id="rgb-button" title="Colours">🎨</div>
           <div id="io-button" title="Import/Export Data">💾</div>
           <div id="save-button">⏩Export</div>
           <div id="load-button">⏪Import</div>

@@ -27,6 +27,10 @@ var tick_pending      = false;
 var one_shot_buff_on  = false;
 var one_shot_buff_val = 0;
 
+// the default colour scheme is cached here:
+var colour_scheme;
+var colour_remap = {};
+
 var suppressed_keys =
     {
         'text': [],
@@ -501,6 +505,276 @@ function node_content (n)
         }
 
     return text;
+}
+
+// =========================================================================
+// CSS utilities
+function get_css_rule (selector, sheet)
+{
+    var ss = sheet ? [ sheet ] : document.styleSheets;
+
+    for( const s of ss )
+        for( const r of s.cssRules )
+            if( r.selectorText == selector )
+                return { sheet: s, rule: r };
+
+    return null;
+}
+
+function user_defined_rule_for (selector)
+{
+    const usr_selector = '#usr-def, ' + selector;
+    // find the stylesheet with the rule we're overriding:
+    const orig_css = get_css_rule( selector );
+
+    if( !orig_css )
+        return null;
+
+    var new_css = get_css_rule( usr_selector, orig_css.sheet );
+
+    if( new_css )
+        return new_css.rule;
+
+    // generate a new rule:
+    var rtxt = usr_selector + " { }";
+    var css  = orig_css.sheet;
+    var ridx = css.cssRules.length;
+
+    try { ridx = css.insertRule( rtxt, ridx ); }
+    catch( error )
+    {
+        var msg = 'user_defined_rule_for( '+ selector +' ): ' + error.message;
+        console.log( msg );
+        ridx = -1;
+    }
+
+    return ( ridx >= 0 ) ? orig_css.sheet.cssRules[ ridx ] : null;
+}
+
+// =========================================================================
+// colour control
+function rgba_values (text)
+{
+    var m;
+    var spec;
+
+    if( m = /\brgba?\((.*?)\)/.exec( text ) )
+        if( spec = m[ 1 ] )
+            spec = spec.split( /\s*,\s*/ );
+
+    return spec;
+}
+
+var active_colour;
+const rgb_rnode_ids = [ 'rr', 'rg', 'rb' ];
+
+function get_usr_rgb_pane (key)
+{
+    var path = "//div[@class='rgb-usr'][@data-ckey='" + key + "']";
+    var pane = xpath( path );
+
+    if( pane && pane.snapshotLength == 1 )
+        return pane.snapshotItem( 0 );
+
+    return null;
+}
+
+function reset_page_colours (from)
+{
+    var remapped = colour_scheme[ from ];
+
+    if( !remapped )
+        return;
+
+    for( const rule of remapped )
+    {
+        if( !rule )
+            continue;
+
+        var selector = rule[ 2 ];
+        var css_attr = rule[ 3 ];
+
+        var usr_rule = user_defined_rule_for( selector );
+
+        if( !usr_rule )
+            continue;
+
+        delete colour_remap[ from ];
+        usr_rule.style.removeProperty( css_attr );
+    }
+}
+
+function adjust_page_colours (from, to)
+{
+    var remapped = colour_scheme[ from ];
+
+    if( !remapped )
+        return;
+
+    for( const rule of remapped )
+    {
+        if( !rule )
+            continue;
+
+        var selector = rule[ 2 ];
+        var css_attr = rule[ 3 ];
+
+        var usr_rule = user_defined_rule_for( selector );
+
+        if( !usr_rule )
+            continue;
+
+        colour_remap[ from ] = to;
+        usr_rule.style[ css_attr ] = to;
+    }
+}
+
+function slide_colour (e)
+{
+    if( !active_colour )
+        return;
+
+    var rgb  = [];
+    var pane = get_usr_rgb_pane( active_colour );
+
+    if( !pane )
+    {
+        console.log( 'no pane for ' +  active_colour );
+        return;
+    }
+    for( var x = 0; x < rgb_rnode_ids.length; x++ )
+        if( range = get_dom_node( rgb_rnode_ids[ x ] ) )
+            rgb[ x ] = range.value * 1;
+
+    var colour = ( 'rgb(' +
+                   rgb[ 0 ] + ', ' +
+                   rgb[ 1 ] + ', ' +
+                   rgb[ 2 ] + ')'  );
+
+    pane.style[ 'background-color' ] = colour;
+    adjust_page_colours( active_colour, colour );
+}
+
+function set_active_colour (e, reset)
+{
+    var key  = this.getAttribute( 'data-ckey' );
+    var pane = get_usr_rgb_pane( key );
+    var map;
+    var rgba;
+    var range;
+
+    if( pane )
+    {
+        if( reset )
+            pane.style[ 'background-color' ] = key;
+        else if( map = pane.style['background-color'] )
+            map = get_colour_value( map );
+    }
+
+    if( rgba = rgba_values( map || key ) )
+        for( var x = 0; x < rgb_rnode_ids.length; x++ )
+            if( range = get_dom_node( rgb_rnode_ids[ x ] ) )
+                range.value = rgba[ x ];
+
+    active_colour = key;
+
+    if( reset )
+        reset_page_colours( key );
+
+    if( this.nodeName != 'INPUT' )
+    {
+        var path  = "preceding-sibling::div[@class='rgb-rad'][1]/input";
+        var radio = xpath( path, this );
+
+        if( radio && radio.snapshotLength > 0 )
+            if( radio = radio.snapshotItem( 0 ) )
+                radio.checked = true;
+    }
+}
+
+function reset_active_colour (e)
+{
+    return set_active_colour.apply( this, [ e, true ] );
+}
+
+function reset_palette (e)
+{
+    var pane;
+
+    for( const key in colour_scheme )
+    {
+        if( pane = get_usr_rgb_pane( key ) )
+            pane.style[ 'background-color' ] = key;
+
+        reset_page_colours( key );
+    }
+}
+
+function save_palette (e)
+{
+    var str = JSON.stringify( colour_remap );
+    localStorage.setItem( 'colour-map', str );
+
+    var msg;
+    if( msg = get_dom_node( 'result' ) )
+        clear_element( msg, '🎨 Colour palette saved' );
+}
+
+function load_palette (e)
+{
+    var str = localStorage.getItem( 'colour-map' );
+    var map = JSON.parse( str );
+
+    for( const colour in map )
+        adjust_page_colours( colour, map[ colour ] );
+}
+
+function toggle_palette (e)
+{
+    var palette = get_dom_node( 'palette' );
+    if( !palette )
+        return;
+
+    if( palette.style.visibility == 'visible' )
+        return palette.style.visibility = 'collapse';
+    else
+        palette.style.visibility = 'visible';
+
+    var wpath   = "//input[@id='rb']/parent::div/following-sibling::div[@data-ckey]";
+    var widgets = xpath( wpath );
+    var cell;
+
+    if( widgets )
+        for( var w = 0; w < widgets.snapshotLength; w++ )
+            if( cell = widgets.snapshotItem( w ) )
+                cell.parentElement.removeChild( cell );
+
+    for( const key in colour_scheme )
+    {
+        var map   = colour_remap[ key ] || key;
+        var divr  = div( 'data-ckey', key, 'class', 'rgb-rad' );
+        var divd  = div( 'data-ckey', key, 'class', 'rgb-def' );
+        var divu  = div( 'data-ckey', key, 'class', 'rgb-usr' );
+        var radio = element( 'input',
+                             'type'     , 'radio' ,
+                             'name'     , 'colour',
+                             'data-ckey', key     ,
+                             'value'    , key     );
+
+        radio.addEventListener( 'click', set_active_colour   );
+        divd.addEventListener ( 'click', reset_active_colour );
+        divu.addEventListener ( 'click', set_active_colour   );
+
+        divr.appendChild( radio );
+        divd.textContent = ' ';
+        divu.textContent = ' ';
+        divd.style[ 'background-color' ] = key;
+        divu.style[ 'background-color' ] = map;
+
+        palette.appendChild( divr );
+        palette.appendChild( divd );
+        palette.appendChild( divu );
+    }
 }
 
 // =========================================================================
@@ -2962,6 +3236,26 @@ function activate_buffctl ()
     }
 }
 
+function activate_rgb_button ()
+{
+
+    var node;
+
+    for( const x of [ [ 'rgb-button'    , 'click', toggle_palette ] ,
+                      [ 'close-palette' , 'click', toggle_palette ] ,
+                      [ 'reset-palette' , 'click', reset_palette  ] ,
+                      [ 'save-palette'  , 'click', save_palette   ] ,
+                      [ 'rr',             'input', slide_colour   ] ,
+                      [ 'rg',             'input', slide_colour   ] ,
+                      [ 'rb',             'input', slide_colour   ] ] )
+    {
+        if( !(node = get_dom_node( x[ 0 ] )) )
+            continue;
+        node.removeEventListener( x[ 1 ], x[ 2 ] );
+        node.addEventListener   ( x[ 1 ], x[ 2 ] );
+    }
+}
+
 function activate_io_buttons ()
 {
     var node;
@@ -2999,6 +3293,46 @@ function activate_rpanel ()
     node.addEventListener   ( 'click', clear_results );
 }
 
+function collect_colour_rules ()
+{
+    var sheets = document.styleSheets;
+    var crules = {};
+
+    for( var s = 0; s < sheets.length; s++ )
+    {
+        for( var r = 0; r < sheets[s].cssRules.length; r++ )
+        {
+            var cssr = sheets[ s ].cssRules[ r ];
+
+            if( cssr instanceof CSSStyleRule )
+            {
+                var colour;
+                for( const attr of [ 'color', 'background-color' ] )
+                {
+                    if( attr in cssr.style && cssr.style[ attr ])
+                    {
+                        if( colour = get_colour_value( cssr.style[ attr ] ) )
+                        {
+                            var selector = cssr.selectorText;
+                            // never touch the palette elements themselves
+                            // in case the user accidentally chooses illegible
+                            // colours (eg white on white):
+                            if( ! /#palette/.exec( selector ) )
+                            {
+                                if( !crules[ colour ] )
+                                    crules[ colour ] = [];
+                                crules[ colour ].push( [ s, r, selector, attr ] );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return crules;
+}
+
 var initialised = 0;
 
 function initialise ()
@@ -3014,6 +3348,8 @@ function initialise ()
 
     if( initialised )
         return;
+
+    colour_scheme = collect_colour_rules();
 
     initialised = 1;
 
@@ -3047,9 +3383,13 @@ function initialise ()
 
     activate_io_buttons();
 
+    activate_rgb_button();
+
     activate_tick_button();
 
     activate_rpanel();
+
+    load_palette();
 
     editable = activate_input_fields();
     if( !editable || editable.snapshotLength <= 0 )
