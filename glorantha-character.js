@@ -510,7 +510,7 @@ function io_pane ()
 {
     var panel  = div( 'id', 'import-export', 'class', 'import-export' );
     var iopane = element( 'pre', 'id', 'io-data', 'class', 'io-data' );
-    var cancel = div( 'class', 'io-cancel' );
+    var cancel = div( 'class', 'io-cancel cancel' );
 
     if( !panel )
         return;
@@ -734,7 +734,7 @@ function import_blob ()
 function import_data ()
 {
     var iopane = io_pane();
-    var load   = div( 'class', 'io-load' );
+    var load   = div( 'class', 'io-load exec' );
 
     load.textContent = 'Load';
     load.addEventListener( 'click', import_blob );
