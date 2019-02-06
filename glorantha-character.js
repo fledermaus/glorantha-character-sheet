@@ -1398,8 +1398,9 @@ function do_something (e)
             if( tick_pending )
                 return tick_skill( id, rnode );
 
-        var adjusted_skill = (target.textContent * 1) + buff_value_for( id );
-        return roll_d100( rnode, adjusted_skill, roll_label( this ) );
+        var skill          = target.textContent * 1;
+        var adjusted_skill = skill + buff_value_for( id );
+        return roll_d100( rnode, skill, adjusted_skill, roll_label( this ) );
     }
 
     rnode.textContent = 'What?';
@@ -2728,9 +2729,9 @@ function result_type_to_buff (s)
     }
 }
 
-function roll_d100 (result, skill, prefix)
+function roll_d100 (result, raw_skill, skill, prefix)
 {
-    if( isNaN( skill ) )
+    if( isNaN( skill ) || raw_skill <= 0 )
     {
         if( result )
             result.textContent = (prefix ? prefix + " " : '') + 'Unavailable';
@@ -2879,8 +2880,9 @@ function roll_nx (e)
         if( text = text.replace( /:\s*/, '' ) )
             text += '×' + multi + ': ';
 
+    var skill = stat * multi;
     if( attr && panel )
-        return roll_d100( panel, stat * multi, text );
+        return roll_d100( panel, skill, skill, text );
 
     return undefined;
 }
@@ -2897,7 +2899,7 @@ function roll_prune (panel, node, prune)
                       node.textContent.replace( /^\s+|\s+$/g, '' ) :
                       '☯' );
 
-        return roll_d100( panel, level, glyph + label );
+        return roll_d100( panel, level, level, glyph + label );
     }
 
     return undefined;
