@@ -88,7 +88,7 @@ var extn_template =
     emotion: { save:   add_new_emotion,
                draw:   draw_default_input_form,
                fields: [ { name: 'type',
-                           type: ['hate','love','loyalty','devotion'] },
+                           type: ['hate','love','loyalty','devotion','fear'] },
                          { name: 'subject', type: 'text' } ,
                          { name: 'level',   type: 'uint' } ] },
     rp:      { save:   add_new_rp,
