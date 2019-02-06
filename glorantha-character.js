@@ -447,6 +447,16 @@ function get_dom_node (id)
     return document.getElementById( id );
 }
 
+function get_colour_value (text)
+{
+    var canary = get_dom_node( 'colour' );
+    var style  = getComputedStyle( canary );
+
+    canary.style.color = text;
+
+    return style.color;
+}
+
 function set_dom_node_text (id, text, edit)
 {
     var node = get_dom_node( id );
