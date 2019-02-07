@@ -2374,6 +2374,8 @@ function label_to_key (label)
 
     generic  = generic.replace ( / /g, '-' );
     specific = specific.replace( / /g, '-' );
+    generic  = generic.replace ( /[🖐✋]/gu, 'H' );
+    specific = specific.replace( /[🖐✋]/gu, 'H' );
 
     return generic + (specific ? ('.' + specific) : '' );
 }
