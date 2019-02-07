@@ -133,11 +133,151 @@ var extn_template =
     //            fields: [ { name: 'label', type: 'text' } ,
     //                      { name: 'glyph', type: 'text' } ,
     //                      { name: 'level', type: 'uint' } ] },
-    // weapon:  { save: add_weapon,
-    //            draw: draw_weapon_input_form,
-    //            fields: [ { name: 'label', type: 'text' } ,
-    //                      { name: 'skill', type: 'uint' } ] }
+    melee:   { save: add_new_weapon,
+               draw: draw_weapon_input_form,
+               fields: [ { name: 'skill' , type: 'text' } ,
+                         { name: 'class' ,
+                           type: function (i) { return weapon_classes( i, 'melee' ); } },
+                         { name: 'hands' , type: [1, 2] } ,
+                         { name: 'str'   , type: 'uint' } ,
+                         { name: 'dex'   , type: 'uint' } ,
+                         { name: 'dam'   , type: 'dice' } ,
+                         { name: 'sr'    , type: 'uint' } ,
+                         { name: 'type'  ,
+                           type: [ 'S:Slashing'     ,
+                                   'SI:Slash+Impale',
+                                   'I:Impale'       ,
+                                   'C:Crush'        ,
+                                   'H:Unarmed'      ]   } ,
+                         { name: 'base' ,  type: 'uint' } ,
+                         { name: 'level',  type: 'uint' } ] },
+    missile:   { save: add_new_weapon,
+                 draw: draw_weapon_input_form,
+                 fields: [ { name: 'skill' , type: 'text' } ,
+                           { name: 'class' ,
+                             type: function (i) { return weapon_classes( i, 'missile' ); } },
+                           { name: 'hands' , type: [1, 2] } ,
+                           { name: 'str'   , type: 'uint' } ,
+                           { name: 'dex'   , type: 'uint' } ,
+                           { name: 'dam'   , type: 'dice' } ,
+                           { name: 'sr'    , type: 'uint' } ,
+                           { name: 'type'  ,
+                             type: [ 'S:Slashing' ,
+                                     'I:Impale'   ,
+                                     'C:Crush'    ]       } ,
+                           { name: 'base' ,  type: 'uint' } ,
+                           { name: 'level',  type: 'uint' } ] },
+
 }
+
+var weapon_categories =
+{
+    melee:   { 'axe'   : true ,
+               'dagger': true ,
+               'sword' : true ,
+               'hammer': true ,
+               'mace'  : true ,
+               'staff' : true ,
+               'spear' : true ,
+               'lasso' : true },
+    missile: { bow          : true ,
+               crossbow     : true ,
+               atlatl       : true ,
+               javelin      : true ,
+               axe          : true ,
+               dagger       : true ,
+               rock         : true ,
+               sling        : true ,
+               'staff-sling': true },
+    unarmed: {},
+}
+
+// common weapons
+var weapons =
+{
+    melee:
+    { axe:
+      [ { },
+        { 'small-axe' : { str:  7, dex: 7, dam: '1d6+1', sr: 4, type: 'S', base: 10 } ,
+          'battle-axe': { str: 13, dex: 7, dam: '1d8+2', sr: 3, type: 'S', base: 10 } } ,
+        { 'battle-axe': { str:  9, dex: 7, dam: '1d8+2', sr: 3, type: 'S', base:  5 } ,
+          'great-axe' : { str: 11, dex: 7, dam: '2d6+2', sr: 2, type: 'S', base:  5 } ,
+          'dagger-axe': { svtr: 13, dex: 9, dam: '3d6'  , sr: 1, type: 'S', base:  5 } } ],
+      dagger:
+      [ { },
+        { 'dagger'         : { str: 0, dex: 0, dam: '1d4+2', sr: 4, type: 'SI', base: 15 } ,
+          'dagger.parrying': { str: 0, dex: 0, dam: '1d4+2', sr: 4, type: 'SI', base: 15 } ,
+          'dagger.throwing': { str: 0, dex: 9, dam: '1d4'  , sr: 4, type: 'SI', base:  5 } ,
+          'sickle'         : { str: 0, dex: 0, dam: '1d6+1', sr: 3, type: 'S' , base:  5 } } ,
+        { } ],
+      sword:
+      [ { },
+        { 'broadsword'  : { str:  9, dex:  7, dam: '1d8+1' , sr: 2, type: 'SI', base: 10 } ,
+          'kopis'       : { str:  9, dex:  9, dam: '1d8+1' , sr: 2, type: 'S' , base: 10 } ,
+          'rapier'      : { str:  7, dex: 13, dam: '1d6+1' , sr: 2, type: 'SI', base: 10 } ,
+          'shortsword'  : { str:  0, dex:  0, dam: '1d6+1' , sr: 3, type: 'SI', base: 10 } } ,
+        { 'greatsword'  : { str: 11, dex: 13, dam: '2d8'   , sr: 1, type: 'S' , base:  5 } ,
+          'romphaia'    : { str: 11, dex:  9, dam: '2d6+2' , sr: 2, type: 'S' , base:  5 } ,
+          'sickle-sword': { str:  9, dex:  9, dam: '1d10+1', sr: 2, type: 'S' , base:  5 } } ],
+      hammer:
+      [ { },
+        { 'war-hammer'  : { str: 11, dex: 9, dam: '1d6+2', sr: 3, type: 'C', base: 10 } } ,
+        { 'great-hammer': { str:  9, dex: 9, dam: '2d6+2', sr: 1, type: 'C', base:  5 } ,
+          'maul':         { str: 11, dex: 7, dam: '2d8'  , sr: 1, type: 'C', base: 10 } } ],
+      mace:
+      [ { },
+        { 'heavy-mace' : { str: 13, dex: 7, dam: '1d8+2', sr: 3, type: 'C', base: 15 } ,
+          'light-mace' : { str:  7, dex: 7, dam: '1d6+2', sr: 3, type: 'C', base: 15 } ,
+          'singlestick': { str:  0, dex: 9, dam: '1d6'  , sr: 4, type: 'C', base: 15 } ,
+          'wooden-club': { str:  7, dex: 7, dam: '1d6'  , sr: 4, type: 'C', base: 15 } } ,
+        { 'mace'       : { str:  9, dex: 7, dam: '1d8+2', sr: 3, type: 'C', base: 10 } } ],
+      staff:
+      [ { },
+        { },
+        { 'quarterstaff': { str: 9, dex: 9, dam: '1d8', sr: 0, type: 'C', base: 15 } } ],
+      spear:
+      [ { },
+        { 'javelin'    : { str:  9, dex: 9, dam: '1d6'   , sr: 2, type: 'I', base: 10 } ,
+          'short-spear': { str:  9, dex: 7, dam: '1d6+1' , sr: 2, type: 'I', base:  5 } } ,
+        { 'lance'      : { str:  9, dex: 7, dam: '1d10+1', sr: 0, type: 'I', base:  5 } ,
+          'pike'       : { str: 11, dex: 7, dam: '2d6+1' , sr: 0, type: 'I', base: 15 } ,
+          'long-spear' : { str:  9, dex: 7, dam: '1d10+1', sr: 0, type: 'I', base: 15 } ,
+          'short-spear': { str:  7, dex: 7, dam: '1d8+1' , sr: 1, type: 'I', base: 15 } } ],
+    },
+    missile:
+    { bow:
+      [ {},
+        {},
+        { 'composite-bow': { str: 13, dex: 9, dam: '1d8+1', type: 'I', base: 5 } ,
+          'elf-bow'      : { str:  9, dex: 9, dam: '1d8+1', type: 'I', base: 5 } ,
+          'self-bow'     : { str:  9, dex: 9, dam: '1d6'  , type: 'I', base: 5 } } ],
+      crossbow:
+      [ {},
+        {},
+        { 'arbalest'         : { str: 13, dex: 7, dam: '3d6+1', reload: 5, type: 'I', base: 10 } ,
+          'crossbow.heavy'   : { str: 11, dex: 7, dam: '2d6+2', reload: 3, type: 'I', base: 25 } ,
+          'crossbow.light'   : { str:  7, dex: 7, dam: '2d4+2', reload: 2, type: 'I', base: 25 } ,
+          'cossbow.repeating': { str:  7, dex: 7, dam: '2d4+2', reload: 1, type: 'I', base: 25 } } ],
+      atlatl:
+      [ {},
+        { 'atlatl': { str: 7, dex: 9, dam: '1+1d6', reload: 1, type: 'I', base: 5 } },
+        {} ],
+      javelin:
+      [ {},
+        { 'dart'       : { str: 0, dex: 9, dam: '1d6'  ,            type: 'I', base: 10 } ,
+          'javelin'    : { str: 9, dex: 9, dam: '1d10' , reload: 1, type: 'I', base: 10 } ,
+          'short-spear': { str: 9, dex: 9, dam: '1d6+1', reload: 1, type: 'I', base: 15 } },
+        {} ],
+      axe:    [ {}, { 'throwing-axe'   : { str: 9, dex: 9, dam: '1d6' , type: 'I', base: 10 } }, {} ],
+      dagger: [ {}, { 'throwing-dagger': { str: 0, dex: 9, dam: '1d4' , type: 'I', base:  5 } }, {} ],
+      rock:   [ {}, { 'rock'           : { str: 0, dex: 0, dam: '1d4' , type: 'C', base: 15 } }, {} ],
+      sling:  [ {}, { 'sling'          : { str: 0, dex: 9, dam: '1d8' , type: 'C', base:  5 } }, {} ],
+      'staff-sling':
+      [ {},
+        { 'staff-sling':  { str: 9, dex: 9, dam: '1d10', reload: 1, type: 'C', base: 10 } },
+        {} ],
+    },
+};
 
 var standard_skills = {};
 var groups =
@@ -337,7 +477,7 @@ var groups =
       label: 'Natural Weapons',
       draw: true,
       bonus: 0,
-      extend: 'weapon',
+      extend: 'unarmed',
       modifier: { inherit: 'manipulation' },
       items: [ { key: 'fist',    type: 'stat', label: "Fist",    base:  5, val: 0 } ,
                { key: 'grapple', type: 'stat', label: "Grapple", base: 10, val: 0 } ,
@@ -346,31 +486,16 @@ var groups =
       label: 'Melee Weapons',
       draw: true,
       bonus: 0,
-      extend: 'weapon',
+      extend: 'melee',
       modifier: { inherit: 'manipulation' },
-      items: [ { key: '1-handed-axe',     type: 'stat', label: "Small Axe (1✋)",  base: 10, val: 0 } ,
-               { key: '2-handed-axe',     type: 'stat', label: "Battle Axe (2✋)", base:  5, val: 0 } ,
-               { key: 'broadsword',       type: 'stat', label: "Broadsword",       base: 10, val: 0 } ,
-               { key: 'dagger',           type: 'stat', label: "Dagger",           base: 15, val: 0 } ,
-               { key: 'kopis',            type: 'stat', label: "Kopis",            base: 10, val: 0 } ,
-               { key: '1-handed-mace',    type: 'stat', label: "Mace (1✋)",       base: 15, val: 0 } ,
-               { key: '1-handed-spear',   type: 'stat', label: "Spear (1✋)",      base:  5, val: 0 } ,
-               { key: 'pike',             type: 'stat', label: "Pike",             base: 15, val: 0 } ,
-               { key: 'rapier',           type: 'stat', label: "Rapier",           base: 10, val: 0 } ,
-               { key: '2-handed-spear',   type: 'stat', label: "Spear (2✋)",      base: 15, val: 0 } ] },
+      items: [ ] },
     { group: 'missile',
       label: 'Missile Weapons',
       draw: true,
       bonus: 0,
-      extend: 'weapon',
+      extend: 'missile',
       modifier: { inherit: 'manipulation' },
-      items: [ { key: 'composite-bow',   type: 'stat', label: "Composite Bow",   base:  5, val:  0 } ,
-               { key: 'javelin',         type: 'stat', label: "Javelin",         base: 10, val:  0 } ,
-               { key: 'pole-lasso',      type: 'stat', label: "Pole Lasso",      base:  5, val:  0 } ,
-               { key: 'self-bow',        type: 'stat', label: "Self Bow",        base: 15, val:  0 } ,
-               { key: 'sling',           type: 'stat', label: "Sling",           base:  5, val:  0 } ,
-               { key: 'throwing-dagger', type: 'stat', label: "Throwing Dagger", base:  5, val:  0 } ,
-               { key: 'thrown-axe',      type: 'stat', label: "Thrown Axe",      base: 10, val:  0 } ] },
+      items: [ ] },
     { group: 'ticks',
       label: 'Ticks',
       draw:   true  ,
@@ -964,6 +1089,7 @@ function import_item( grp, data )
             id = 'prune.' + cur_item.subkeys[ 0 ];
             break;
 
+          case 'weapon':
           case 'stat':
             if( (base + val) > 0 )
                 if( !isNaN( bonus ) )
@@ -1208,7 +1334,7 @@ function set_inspired_skill (id, panel)
     if( !skill )
         return false;
 
-    if( skill.type != 'stat' )
+    if( skill.type != 'stat' && skill.type != 'weapon' )
         return false;
 
     auto_buff_on = id;
@@ -1311,7 +1437,7 @@ function buff_value_for (id)
         if( !skill )
             return 0;
 
-        if( skill.type != 'stat' )
+        if( skill.type != 'stat' && skill.type != 'weapon' )
             return 0;
     }
 
@@ -1444,7 +1570,7 @@ function editclass (node)
 function updateclass (node)
 {
     var nc = ' ' + node.getAttribute('class') + ' ';
-    for( const c of ['pinfo', 'skill', 'attr', 'prune', 'hit', 'rp', 'manual-buff'] )
+    for( const c of ['pinfo', 'skill', 'attr', 'prune', 'hit', 'rp', 'weapon', 'manual-buff'] )
         if( nc.indexOf( ' ' + c + ' ') >= 0 )
             return c;
 
@@ -1745,6 +1871,7 @@ function _make_stat_value(dl, id, data, bonus, subtype)
         case 'attr':
         case 'stat':
         case 'rune':
+        case 'weapon':
         case 'emotion':
           cssc += 'uint';
           val *= 1;
@@ -1901,6 +2028,7 @@ function item_label (data)
       case 'stat':
       case 'rune':
       case 'dice':
+      case 'weapon':
       default:
           return data.label ? data.label : ucfirst( data.key );
     }
@@ -1955,6 +2083,7 @@ function make_item (dl, group, data, width, bonus)
       case 'stat':
       case 'rune':
       case 'dice':
+      case 'weapon':
       default:
           make_stat_value( dl, id, data, bonus );
           break;
@@ -2234,6 +2363,28 @@ function field_widget (f,g)
     return [ label, widget ];
 }
 
+function weapon_classes (id, wgroup)
+{
+    var ec  = 'new-item-field-widget choice';
+    var sel = element( 'select', 'id', id );
+
+    var widget = div( 'class', ec );
+    widget.appendChild( sel );
+
+    var def = element( 'option', 'value', '' );
+    def.textContent = '-';
+    sel.appendChild( def );
+
+    for( const o in weapon_categories[ wgroup ] )
+    {
+        var opt = element( 'option', 'value', wgroup + '.' + o );
+        opt.textContent = ucfirst( o );
+        sel.appendChild( opt );
+    }
+
+    return widget;
+}
+
 function draw_default_input_form (grp, type)
 {
     dismiss_input_forms();
@@ -2270,8 +2421,178 @@ function draw_default_input_form (grp, type)
     form.appendChild( cancel );
     form.appendChild( save );
     document.body.appendChild( form );
+
+    return form;
 }
 
+function weapon_label (n,h)
+{
+    return ucfirst( n.replace( '-', ' ' ) ) + ' (' + h + '🖐)';
+}
+
+function redraw_weapon_presets (e)
+{
+    var csel = this;
+
+    if( !csel ) return;
+    if( csel.nodeName != 'SELECT' )  return;
+
+    const pid = csel.getAttribute( 'data-preset-id' );
+    if( !pid ) return;
+
+    var psel = get_dom_node( pid );
+    if( !psel ) return;
+
+    var cat = csel.value;
+    if( !cat ) return;
+
+    var xcat = split_id( cat );
+    var wgrp = xcat[ 0 ];
+    var wcat = xcat[ 1 ];
+    if( !weapon_categories[ wgrp ] ) return;
+
+    // strip out everything under psel except the first <option>
+    var n = 0;
+    var remove = [];
+    for( const c of psel.childNodes )
+    {
+        switch( c.nodeType )
+        {
+          case Node.ELEMENT_NODE:
+              if( n++ )
+                  remove.unshift( c );
+              break;
+          default:
+              remove.unshift( c );
+        }
+    }
+
+    for( const c of remove )
+        psel.removeChild( c );
+
+    var presets = weapons[ wgrp ] ? weapons[ wgrp ][ wcat ] : null;
+
+    if( !presets || !presets.length )
+        return;
+
+    for( const h of [1, 2] )
+    {
+        for( const k in presets[ h ] )
+        {
+            var ltxt = weapon_label( k, h );
+            var opt  = element( 'option', 'value', cat + '.' + h + '.' + k );
+            opt.textContent = ltxt;
+            psel.appendChild( opt );
+        }
+    }
+
+    psel.selectedIndex = 0;
+
+    return psel;
+}
+
+function apply_weapon_presets (e)
+{
+    var psel = this;
+
+    if( !psel ) return;
+    if( psel.nodeName != 'SELECT' )  return;
+
+    var key  = psel.value;
+    if( !key ) return;
+
+    var m; // does the key look sane?
+    if( !(m = /^(.+?)\.(.+?)\.(\d+?)\.(.*)$/.exec( key ) ))
+        return;
+
+    var ctype = m[ 1 ]; // melee, missile, etc…
+    var wcat  = m[ 2 ]; // axe, club, bow, etc…
+    var hands = m[ 3 ]; // ✋×?
+    var name  = m[ 4 ];
+
+    // do we have any preset data?
+    var preset = ( weapons[ ctype ] &&
+                   weapons[ ctype ][ wcat ] &&
+                   weapons[ ctype ][ wcat ][ hands ] &&
+                   weapons[ ctype ][ wcat ][ hands ][ name ] );
+
+    for( const map of [ [ 'str'  ] ,
+                        [ 'dex'  ] ,
+                        [ 'dam'  ] ,
+                        [ 'sr'   ] ,
+                        [ 'base' ] ,
+                        [ 'type' ] ,
+                        [ 'hands', hands ],
+                        [ 'skill', weapon_label( name, hands ) ] ] )
+    {
+        var key = map[ 0 ];
+        var id  = 'new-item-widget-' + key;
+        var val = map[ 1 ] || preset[ key ];
+        var ui  = get_dom_node( id );
+
+        if( !ui ) continue;
+
+        if( ui.nodeName == 'SELECT' )
+            set_select_element_by_value( ui, '' + val );
+        else
+            ui.textContent = '' + val;
+    }
+}
+
+
+function draw_weapon_input_form (grp, type)
+{
+    var ui = draw_default_input_form( grp, type );
+
+    if( !ui )
+        return;
+
+    const cid = 'new-item-widget-class';
+    const pid = 'new-item-widget-preset';
+    var csel  = get_dom_node( cid );
+
+    if( !csel )
+        return;
+
+    var ldiv = div( 'class', 'new-item-field-label' );
+    var pdiv = div( 'class', 'new-item-field-widget choice');
+
+    ldiv.textContent = "Preset: ";
+
+    var psel = element( 'select', 'id' , pid,  'data-class-id', cid );
+    var popt = element( 'option', 'value', "" );
+
+    csel.setAttribute( 'data-preset-id', pid );
+    popt.textContent = "-";
+    psel.appendChild( popt );
+    pdiv.appendChild( psel );
+
+    csel.removeEventListener( 'change', redraw_weapon_presets );
+    csel.addEventListener   ( 'change', redraw_weapon_presets );
+    psel.addEventListener   ( 'change', apply_weapon_presets  );
+
+    if( csel.value )
+        redraw_weapon_presets.apply( csel, [] );
+
+    // add the divs either before the class selector's
+    // junior sibling, or at the end of the class selector's
+    // container if it is the last child.
+    var insert    = csel.parentElement ? csel.parentElement.nextSibling : null;
+    var container = csel.parentElement ? csel.parentElement.parentElement : null;
+
+    if( insert )
+    {
+        container.insertBefore( ldiv, insert );
+        container.insertBefore( pdiv, insert );
+    }
+    else
+    {
+        container.appendChild( ldiv );
+        container.appendChild( pdiv );
+    }
+
+    return ui;
+}
 // =========================================================================
 // Handle input from new-skill-etc forms
 
@@ -2474,6 +2795,37 @@ function add_new_skill (form_data)
 
     var skill = { key: key, type: 'stat', label: label,
                   base: base, val: level };
+    group.items.push( skill );
+    draw_new_skill( group, skill );
+    return true;
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function add_new_weapon (form_data)
+{
+    var group = get_group( form_data.group );
+
+    if( !group )
+        return "Cannot add entry to group " + form_data.group;
+
+    var label = form_data.skill;
+    var base  = form_data.base  * 1;
+    var level = form_data.level * 1;
+    var key   = label_to_key( label );
+    var cat   = group.group + '.' + ''
+
+    var skill = { key  : key   ,
+                  label: label ,
+                  type : 'weapon',
+                  cat  : form_data.class ,
+                  dam  : form_data.dam   ,
+                  dtype: form_data.type  ,
+                  hands: form_data.hands * 1 ,
+                  sr   : form_data.sr    * 1 ,
+                  str  : form_data.str   * 1 ,
+                  dex  : form_data.dex   * 1 ,
+                  base : form_data.base  * 1 ,
+                  val  : form_data.level * 1 };
+
     group.items.push( skill );
     draw_new_skill( group, skill );
     return true;
