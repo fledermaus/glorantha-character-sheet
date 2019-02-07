@@ -2186,7 +2186,11 @@ function field_widget (f,g)
     var label = div( 'class', 'new-item-field-label'  );
     label.textContent  = ucfirst( f.name ) + ':';
 
-    if( typeof( etype ) == "string" )
+    if ( typeof( etype ) == "function" )
+    {
+        widget = etype( wid );
+    }
+    else if( typeof( etype ) == "string" )
     {
         var ec = 'new-item-field-widget editable ' + etype;
         widget = div( 'id', wid, 'class', ec );
