@@ -426,6 +426,11 @@ const storage = { get:  storage_get ,
                   set:  storage_set ,
                   keys: storage_keys,
                   del:  storage_zap };
+
+function skill_is_standard (id)
+{
+    return standard_skills[ id ] ? id : false;
+}
 // =========================================================================
 // utilities
 
@@ -868,7 +873,7 @@ function export_data ()
 
         for( const i of g.items )
             if( !i.noedit )
-                if( standard_skills[ g.group + '.' + i.key ] )
+                if( skill_is_standard( g.group + '.' + i.key ) )
                     gcache.push( (i.base == null) ? [ i.key, i.val ] : [ i.key, i.val, i.base ] );
                 else
                     gcache.push( [ false, i ] );
@@ -935,7 +940,7 @@ function import_item( grp, data )
 
         // predefined skill in importer:
         // import at most base value and level
-        if( standard_skills[ id ] )
+        if( skill_is_standard( id ) )
         {
             if( new_item.base != undefined )
                 cur_item.base = new_item.base;
@@ -1909,7 +1914,7 @@ function make_item (dl, group, data, width, bonus)
     var lspan = element( 'span' );
     var id = group + '.' + data.key;
 
-    if( !standard_skills[ id ] )
+    if( !skill_is_standard( id ) )
     {
         edit = div( 'class', 'delete-item', 'data-ge-id', id );
         edit.textContent = '⊖';
