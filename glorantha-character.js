@@ -2212,8 +2212,22 @@ function field_widget (f,g)
 
         for( const o of etype )
         {
-            var opt = element( 'option', 'value', o );
-            opt.textContent = ucfirst( o );
+            var m;
+            var text;
+            var value;
+
+            if( m = /^(\S+?)(?::(.*))?$/.exec( '' + o ) )
+            {
+                value = m[ 1 ];
+                text  = m[ 2 ] || m[ 1 ];
+            }
+            else
+            {
+                value = text = '' + o;
+            }
+
+            var opt = element( 'option', 'value', value );
+            opt.textContent = ucfirst( text );
             sel.appendChild( opt );
         }
     }
