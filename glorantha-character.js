@@ -3108,7 +3108,7 @@ function load_group_data ()
         if( !group      ) continue;
         if( !entry_name ) continue;
         if( !nv         ) continue;
-        //console.log( 'parse('+ nv +')');
+
         nv = JSON.parse( nv );
         if( !nv         ) continue;
 
