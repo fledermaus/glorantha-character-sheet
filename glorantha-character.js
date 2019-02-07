@@ -15,6 +15,8 @@ var auto_buff_val     = 0;
 // but I have chosen not to care about this.
 var tick_pending      = false;
 
+// can we delete user-defined skills?
+var ui_delete_ok      = false;
 // this works a little differently than the
 // other two: buff_on here means the next roll
 // should _create_ a buff_val
@@ -2354,7 +2356,14 @@ function delete_user_item (e)
     var id      = clicked.getAttribute( 'data-ge-id' );
     var skill   = get_dom_node( id );
 
-    if( !standard_skills[ id ] )
+    if( !ui_delete_ok )
+    {
+        var panel = get_dom_node( 'result' );
+        clear_element( panel, '🔏 Unlock UI to delete items' );
+        return;
+    }
+
+    if( !skill_is_standard( id ) )
         del_entry( id );
 
     storage.del( id );
@@ -3218,6 +3227,25 @@ function toggle_tick_pending (e)
         clear_element( panel, '🎲 ← Activate a skill or rune to tick it' );
 }
 
+function toggle_ui_lock (e)
+{
+    var lock = get_dom_node( 'lock-ui' );
+    var mesg = get_dom_node( 'result'  );
+
+    if( ui_delete_ok )
+    {
+        ui_delete_ok = false;
+        clear_element( lock, '🔏' );
+        clear_element( mesg, '🔏 UI locked, items cannot be deleted' );
+    }
+    else
+    {
+        ui_delete_ok = true;
+        clear_element( lock, '🔓' );
+        clear_element( mesg, '🔓 UI unlocked, items CAN be deleted' );
+    }
+}
+
 function activate_buffctl ()
 {
     var karate = get_dom_node( 'wax-on-wax-off' );
@@ -3322,6 +3350,18 @@ function activate_rpanel ()
     node.addEventListener   ( 'click', clear_results );
 }
 
+function activate_ui_lock_toggle ()
+{
+    var node;
+
+    if( !(node = get_dom_node( 'lock-ui' )) )
+        return;
+
+    node.removeEventListener( 'click', toggle_ui_lock );
+    node.addEventListener   ( 'click', toggle_ui_lock );
+
+}
+
 function collect_colour_rules ()
 {
     var sheets = document.styleSheets;
@@ -3417,6 +3457,8 @@ function initialise ()
     activate_tick_button();
 
     activate_rpanel();
+
+    activate_ui_lock_toggle();
 
     load_palette();
 
