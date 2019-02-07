@@ -1547,7 +1547,43 @@ function do_something (e)
                 return tick_skill( id, rnode );
 
         var skill          = target.textContent * 1;
-        var adjusted_skill = skill + buff_value_for( id );
+        var buff           = buff_value_for( id );
+        var adjusted_skill = skill + buff;
+
+        // weapons in the same category can be used at ½ the
+        // highest skill in that category:
+        var data  = get_entry( id );
+        if( data && data.type == 'weapon' )
+        {
+            var buf2  = buff_value_for( id ); // this will be sans 1-shot buffs
+            var group = get_group( id );
+            var gmod  = group_modifier( group );
+            var cat   = data.cat;
+            var hands = data.hands;
+
+            for( const i of group.items )
+            {
+                if( i.key == data.key )
+                    continue;
+                if( i.cat   != data.cat  ||
+                    i.hands != data.hands )
+                    continue;
+
+                // we need to figure out if the alt skill,
+                // including skill-specific buffs and one
+                // shot buffs, is > 2× the weapon we are trying:
+                var one_shot  = buff - buf2;
+                var alt_id    = group.group + '.' + i.key;
+                var alt_buff  = buff_value_for( alt_id ) + one_shot;
+                var alt_skill = (gmod + i.base + i.val + alt_buff) / 2;
+                if( alt_skill < adjusted_skill )
+                    continue;
+
+                adjusted_skill = alt_skill;
+                break;
+            }
+        }
+
         return roll_d100( rnode, skill, adjusted_skill, roll_label( this ) );
     }
 
