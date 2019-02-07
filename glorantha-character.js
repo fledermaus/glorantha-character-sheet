@@ -2307,10 +2307,9 @@ function process_form (id,type)
 
         if( typeof( f.type ) == "string" )
             value = widget.textContent;
-        else if( Array.isArray( f.type ) )
-            if( widget.options )
-                if( widget.selectedIndex >= 0 )
-                    value = widget.options[widget.selectedIndex].value;
+        else if( widget.options )
+            if( widget.selectedIndex >= 0 )
+                value = widget.options[widget.selectedIndex].value;
         data[ f.name ] = value;
     }
 
