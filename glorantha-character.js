@@ -49,7 +49,7 @@ var allowed_keys =
         'dice': [],
         'base': [],
     };
-
+// (set-fontset-font (face-attribute 'default :fontset) '(#x0e000 . #x0f8ff) "Gloranthan-Runes" nil)
 const rune_glyph = { darkness:       '' ,// e000
                      water:          '' ,// e001
                      earth:          '' ,// e002
