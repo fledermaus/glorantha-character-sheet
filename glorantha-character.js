@@ -3829,6 +3829,25 @@ function collect_colour_rules ()
     return crules;
 }
 
+function add_std_weapon (group,h,k)
+{
+    var hands = h * 1;
+    var label = weapon_label( k, hands );
+    var key   = label_to_key( label );
+    var id    = group + '.' + key;
+
+    standard_skills[ id ] = true;
+}
+
+function generate_standard_weapons ()
+{
+    for( const group in weapons )
+        for( const wcat in weapons[ group ] )
+            for( const hands of [ 1, 2 ] )
+                for( const key in weapons[ group ][ wcat ][ hands ] )
+                    add_std_weapon( group, hands, key );
+}
+
 var initialised = 0;
 
 function initialise ()
@@ -3848,6 +3867,11 @@ function initialise ()
     colour_scheme = collect_colour_rules();
 
     initialised = 1;
+
+    // in retrospect,no, allow players to add & remove standard
+    // weapons at will, there are too many to clutter up the sheet
+    // with:
+    // generate_standard_weapons();
 
     for( const g of groups )
         for( const i of g.items )
