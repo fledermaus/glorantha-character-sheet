@@ -505,6 +505,21 @@ function set_dom_node_text (id, text, edit)
     return node;
 }
 
+function set_select_element_by_value (select, val)
+{
+    if( !select ) return;
+    if( select.nodeName != 'SELECT' ) return;
+
+    for( var i = 0; i < select.childNodes.length; i++ )
+    {
+        if( select.childNodes[i].nodeName != 'OPTION' ) continue;
+        if( select.childNodes[i].value     !=  val     ) continue;
+
+        select.childNodes[i].selected = true;
+        break;
+    }
+}
+
 function utoa (str)
 {
     return btoa( unescape( encodeURIComponent( str ) ) );
