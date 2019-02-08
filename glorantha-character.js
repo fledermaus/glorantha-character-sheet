@@ -3298,6 +3298,8 @@ function roll_nx (e)
     var nx = this.textContent;
     var found = /(\d+)×/u.exec( nx );
 
+    e.stopPropagation();
+
     if( !found )
         return undefined;
 
@@ -3367,7 +3369,7 @@ function setup_nx_roll (panel, node, attr)
     {
         var opt = div( 'class', 'nxopt' );
         opt.textContent = (x+1) + '×';
-        opt.onclick = roll_nx;
+        opt.addEventListener( 'click', roll_nx );
         opt_group.appendChild( opt );
     }
 }
