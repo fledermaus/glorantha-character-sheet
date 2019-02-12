@@ -3926,7 +3926,9 @@ function generate_standard_weapons ()
     for( const arg of [ [ 'unarmed', 2, 'fist'   , 'fist'    ] ,
                         [ 'unarmed', 2, 'grapple', 'grapple' ] ,
                         [ 'unarmed', 0, 'kick'   , 'kick'    ] ,
-                      ] )
+                        [ 'shield' , 1, 'shield' , 'small-shield'  ] ,
+                        [ 'shield' , 1, 'shield' , 'medium-shield' ] ,
+                        [ 'shield' , 1, 'shield' , 'large-shield'  ]  ] )
          add_std_weapon.apply( null, arg );
 }
 
