@@ -3863,23 +3863,47 @@ function collect_colour_rules ()
     return crules;
 }
 
-function add_std_weapon (group,h,k)
+function add_std_weapon (grp,h,k)
 {
     var hands = h * 1;
     var label = weapon_label( k, hands );
     var key   = label_to_key( label );
-    var id    = group + '.' + key;
+    var id    = grp + '.' + key;
+    var cat   = grp + '.' + split_id( key )[ 0 ];
+    var group = get_group( grp );
+    var entry = get_entry( id  );
+    var raw   = weapons[ grp ][ k ][ hands ][ k ];
+
+    if( !group )
+        return;
 
     standard_skills[ id ] = true;
+
+    if( !entry )
+    {
+        var skill =
+            {
+                key  : key     ,
+                label: label   ,
+                type : 'weapon',
+                cat  : cat       ,
+                dam  : raw.dam ,
+                dtype: raw.type,
+                hands: hands   ,
+                sr   : raw.sr  ,
+                str  : raw.str ,
+                dex  : raw.dex ,
+                base : raw.base,
+                val  : 0       };
+        group.items.push( skill );
+    }
 }
 
 function generate_standard_weapons ()
 {
-    for( const group in weapons )
-        for( const wcat in weapons[ group ] )
-            for( const hands of [ 1, 2 ] )
-                for( const key in weapons[ group ][ wcat ][ hands ] )
-                    add_std_weapon( group, hands, key );
+    add_std_weapon( 'unarmed', 2, 'fist'    );
+    add_std_weapon( 'unarmed', 2, 'grapple' );
+    add_std_weapon( 'unarmed', 0, 'kick'    );
 }
 
 var initialised = 0;
@@ -3902,10 +3926,7 @@ function initialise ()
 
     initialised = 1;
 
-    // in retrospect,no, allow players to add & remove standard
-    // weapons at will, there are too many to clutter up the sheet
-    // with:
-    // generate_standard_weapons();
+    generate_standard_weapons();
 
     for( const g of groups )
         for( const i of g.items )
