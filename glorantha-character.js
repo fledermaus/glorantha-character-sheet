@@ -166,8 +166,24 @@ var extn_template =
                                      'C:Crush'    ]       } ,
                            { name: 'base' ,  type: 'uint' } ,
                            { name: 'level',  type: 'uint' } ] },
-
-}
+    unarmed:   { save: add_new_weapon,
+                 draw: draw_weapon_input_form,
+                 fields: [ { name: 'skill' , type: 'text' } ,
+                           { name: 'class' ,
+                             type: function (i) { return weapon_classes( i, 'unarmed' ); } },
+                           { name: 'hands' , type: [0, 1, 2] } ,
+                           { name: 'str'   , type: 'uint' } ,
+                           { name: 'dex'   , type: 'uint' } ,
+                           { name: 'dam'   , type: 'dice' } ,
+                           { name: 'sr'    , type: 'uint' } ,
+                           { name: 'type'  ,
+                             type: [ 'H:Hand-to-Hand',
+                                     'SI:Slash+Impale',
+                                     'S:Slashing' ,
+                                     'I:Impale'   ,
+                                     'C:Crush'    ]       } ,
+                           { name: 'base' ,  type: 'uint' } ,
+                           { name: 'level',  type: 'uint' } ] },}
 
 var weapon_categories =
 {
@@ -188,8 +204,10 @@ var weapon_categories =
                rock         : true ,
                sling        : true ,
                'staff-sling': true },
-    unarmed: {},
-}
+    unarmed: { fist   : true ,
+               grapple: true ,
+               kick   : true },
+};
 
 // common weapons
 var weapons =
@@ -274,6 +292,23 @@ var weapons =
       'staff-sling':
       [ {},
         { 'staff-sling':  { str: 9, dex: 9, dam: '1d10', reload: 1, type: 'C', base: 10 } },
+        {} ],
+    },
+    unarmed:
+    { fist:
+      [ {},
+        {},
+        { 'fist'         : { str:  0, dex: 0, sr: 4, dam: '1d3'  , type: 'H', base: 25 } ,
+          'cestus.light' : { str:  7, dex: 0, sr: 4, dam: '1d3+1', type: 'H', base: 25 } ,
+          'cestus.heavy' : { str: 11, dex: 0, sr: 4, dam: '1d3+2', type: 'H', base: 25 } ,
+          'claw'         : { str:  7, dex: 9, sr: 4, dam: '1d4+1', type: 'SI',base: 25 } } ],
+      grapple:
+      [ {},
+        {},
+        { 'grapple' : { str: 0, dex: 0, sr: 4, dam: 'grapple', type: 'H', base: 25 } } ],
+      kick:
+      [ { 'kick'    : { str: 0, dex: 0, sr: 4, dam: '1d6', type: 'H', base: 15 } },
+        {},
         {} ],
     },
 };
@@ -478,9 +513,7 @@ var groups =
       bonus: 0,
       extend: 'unarmed',
       modifier: { inherit: 'manipulation' },
-      items: [ { key: 'fist',    type: 'stat', label: "Fist",    base:  5, val: 0 } ,
-               { key: 'grapple', type: 'stat', label: "Grapple", base: 10, val: 0 } ,
-               { key: 'kick',    type: 'stat', label: "Kick",    base: 10, val: 0 } ] },
+      items: [ ] },
     { group: 'melee',
       label: 'Melee Weapons',
       draw: true,
