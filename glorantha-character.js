@@ -473,7 +473,7 @@ var groups =
                { key: 'medium-shield', type: 'stat', label: "Medium Shield", base: 15, val: 0 } ,
                { key: 'small-shield',  type: 'stat', label: "Small Shield",  base: 15, val: 0 } ] },
     { group: 'unarmed',
-      label: 'Natural Weapons',
+      label: 'Natural Weapons',
       draw: true,
       bonus: 0,
       extend: 'unarmed',
@@ -2213,7 +2213,7 @@ function group_title(g)
     var ttext = g.label;
 
     if( g.bonus != undefined )
-        ttext += ' (' + ((g.bonus >= 0) ? '+' : '') + (g.bonus * 1) + ')';
+        ttext += ' (' + ((g.bonus >= 0) ? '+' : '') + (g.bonus * 1) + ')';
 
     return '  ' + ttext;
 }
