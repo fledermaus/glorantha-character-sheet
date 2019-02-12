@@ -3311,7 +3311,7 @@ function roll_d100 (result, raw_skill, skill, prefix)
     return [ rolled, label ];
 }
 
-function roll_ndx (ndx)
+function roll_ndx (ndx, max)
 {
     var seq = ndx.split('d');
     var n   = seq[ 0 ] * 1;
@@ -3325,13 +3325,13 @@ function roll_ndx (ndx)
         return 0;
 
     for(var i = 0; i < n; i++)
-        r += maths.floor( maths.random() * x )  + 1;
+        r += max ? x : (maths.floor( maths.random() * x )  + 1);
 
     return r;
 }
 
 const ndxre = /\d*d\d+|[+-]|\d+/g;
-function roll_ndxseq (result, skill)
+function roll_ndxseq (result, skill, max)
 {
     var op = '+';
     var rolled = 0;
@@ -3345,8 +3345,8 @@ function roll_ndxseq (result, skill)
         var r = 0;
         if( d == '+' || d == '-' ) { op = d; continue; }
 
-        if( isNaN(d) ) { r = roll_ndx(d); }
-        else             { r = d * 1 }
+        if( isNaN(d) ) { r = roll_ndx( d, max ); }
+        else           { r = d * 1; }
 
         if( op == '+' ) { rolled += r; }
         else            { rolled -= r; }
