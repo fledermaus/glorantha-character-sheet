@@ -219,7 +219,7 @@ var weapons =
           'battle-axe': { str: 13, dex: 7, dam: '1d8+2', sr: 3, type: 'S', base: 10 } } ,
         { 'battle-axe': { str:  9, dex: 7, dam: '1d8+2', sr: 3, type: 'S', base:  5 } ,
           'great-axe' : { str: 11, dex: 7, dam: '2d6+2', sr: 2, type: 'S', base:  5 } ,
-          'dagger-axe': { svtr: 13, dex: 9, dam: '3d6'  , sr: 1, type: 'S', base:  5 } } ],
+          'dagger-axe': { str: 13, dex: 9, dam: '3d6'  , sr: 1, type: 'S', base:  5 } } ],
       dagger:
       [ { },
         { 'dagger'         : { str: 0, dex: 0, dam: '1d4+2', sr: 4, type: 'SI', base: 15 } ,
