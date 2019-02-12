@@ -3928,7 +3928,8 @@ function generate_standard_weapons ()
                         [ 'unarmed', 0, 'kick'   , 'kick'    ] ,
                         [ 'shield' , 1, 'shield' , 'small-shield'  ] ,
                         [ 'shield' , 1, 'shield' , 'medium-shield' ] ,
-                        [ 'shield' , 1, 'shield' , 'large-shield'  ]  ] )
+                        [ 'shield' , 1, 'shield' , 'large-shield'  ] ,
+                        [ 'melee'  , 2, 'staff'  , 'quarterstaff'  ] ] )
          add_std_weapon.apply( null, arg );
 }
 
