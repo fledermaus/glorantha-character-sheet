@@ -1955,13 +1955,23 @@ function _make_stat_value(dl, id, data, bonus, subtype)
     var sval = element( 'span' );
     var sbtn = element( 'span', 'data-ge-id', id );
     var base = entry_base( data );
+    var parry;
 
     switch( data.type )
     {
+        case 'weapon':
+          if( !data.noroll ) // this would make no sense to set for weapons
+          {
+              parry = element( 'span', 'data-ge-id', id, 'class', 'roll',
+                               'data-action', 'parry' );
+              parry.textContent =
+                  (( data.cat == 'shield.shield' ) ? '🛡' : '⚔') + '  ';
+              parry.style.float = 'left';
+              parry.style.width = '2em';
+          }
         case 'attr':
         case 'stat':
         case 'rune':
-        case 'weapon':
         case 'emotion':
           cssc += 'uint';
           val *= 1;
@@ -1991,10 +2001,14 @@ function _make_stat_value(dl, id, data, bonus, subtype)
     else
     {
         sbtn.setAttribute( 'class', 'roll' );
+        sbtn.setAttribute( 'data-action', 'attack' );
         if( data.type == 'rune' && rune_glyph[ data.key ] )
             sbtn.textContent = rune_glyph[ data.key ] + '  ';
         else
             sbtn.textContent = "🎲  ";
+
+        if( parry )
+            dd.appendChild( parry );
     }
 
     sbtn.style.float = 'left';
