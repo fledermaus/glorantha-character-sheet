@@ -183,7 +183,22 @@ var extn_template =
                                      'I:Impale'   ,
                                      'C:Crush'    ]       } ,
                            { name: 'base' ,  type: 'uint' } ,
-                           { name: 'level',  type: 'uint' } ] },}
+                           { name: 'level',  type: 'uint' } ] },
+    shield:    { save: add_new_weapon,
+                 draw: draw_weapon_input_form,
+                 fields: [ { name: 'skill' , type: 'text' } ,
+                           { name: 'class' ,
+                             type: function (i) { return weapon_classes( i, 'shield' ); } },
+                           { name: 'hands' , type: [ 1 ]  } ,
+                           { name: 'str'   , type: 'uint' } ,
+                           { name: 'dex'   , type: 'uint' } ,
+                           { name: 'dam'   , type: 'dice' } ,
+                           { name: 'sr'    , type: 'uint' } ,
+                           { name: 'type'  ,
+                             type: [ 'C:Crush', 'S:Slashing' ] } ,
+                           { name: 'base'  ,  type: 'uint' } ,
+                           { name: 'level' ,  type: 'uint' } ] },
+};
 
 var weapon_categories =
 {
@@ -207,6 +222,7 @@ var weapon_categories =
     unarmed: { fist   : true ,
                grapple: true ,
                kick   : true },
+    shield:  { shield : true },
 };
 
 // common weapons
@@ -309,6 +325,14 @@ var weapons =
       kick:
       [ { 'kick'    : { str: 0, dex: 0, sr: 4, dam: '1d6', type: 'H', base: 15 } },
         {},
+        {} ],
+    },
+    shield:
+    { shield:
+      [ {},
+        { 'small-shield' : { str:  5, dex: 0, sr: 3, dam: '1d3', type: 'C', base: 15 } ,
+          'medium-shield': { str:  9, dex: 0, sr: 3, dam: '1d4', type: 'C', base: 15 } ,
+          'large-shield' : { str: 12, dex: 0, sr: 3, dam: '1d6', type: 'C', base: 15 } },
         {} ],
     },
 };
@@ -504,9 +528,7 @@ var groups =
       bonus: 0,
       extend: 'shield',
       modifier: { inherit: 'manipulation' },
-      items: [ { key: 'large-shield',  type: 'stat', label: "Large Shield",  base: 15, val: 0 } ,
-               { key: 'medium-shield', type: 'stat', label: "Medium Shield", base: 15, val: 0 } ,
-               { key: 'small-shield',  type: 'stat', label: "Small Shield",  base: 15, val: 0 } ] },
+      items: [ ] },
     { group: 'unarmed',
       label: 'Natural Weapons',
       draw: true,
