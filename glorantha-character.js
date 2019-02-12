@@ -3863,16 +3863,16 @@ function collect_colour_rules ()
     return crules;
 }
 
-function add_std_weapon (grp,h,k)
+function add_std_weapon (grp,h,cat,k)
 {
     var hands = h * 1;
     var label = weapon_label( k, hands );
     var key   = label_to_key( label );
     var id    = grp + '.' + key;
-    var cat   = grp + '.' + split_id( key )[ 0 ];
+    var wtype = grp + '.' + cat;
     var group = get_group( grp );
     var entry = get_entry( id  );
-    var raw   = weapons[ grp ][ k ][ hands ][ k ];
+    var raw   = weapons[ grp ][ cat ][ hands ][ k ];
 
     if( !group )
         return;
@@ -3886,7 +3886,7 @@ function add_std_weapon (grp,h,k)
                 key  : key     ,
                 label: label   ,
                 type : 'weapon',
-                cat  : cat       ,
+                cat  : wtype   ,
                 dam  : raw.dam ,
                 dtype: raw.type,
                 hands: hands   ,
@@ -3901,9 +3901,11 @@ function add_std_weapon (grp,h,k)
 
 function generate_standard_weapons ()
 {
-    add_std_weapon( 'unarmed', 2, 'fist'    );
-    add_std_weapon( 'unarmed', 2, 'grapple' );
-    add_std_weapon( 'unarmed', 0, 'kick'    );
+    for( const arg of [ [ 'unarmed', 2, 'fist'   , 'fist'    ] ,
+                        [ 'unarmed', 2, 'grapple', 'grapple' ] ,
+                        [ 'unarmed', 0, 'kick'   , 'kick'    ] ,
+                      ] )
+         add_std_weapon.apply( null, arg );
 }
 
 var initialised = 0;
