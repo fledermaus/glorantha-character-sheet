@@ -1564,6 +1564,7 @@ function do_something (e)
     var atype  = updateclass( target );
     var rnode  = document.getElementById( 'result' );
     var id     = target.getAttribute( 'id' );
+    var action = this.getAttribute( 'data-action' ) || 'roll';
 
     if( atype == 'prune' )
     {
@@ -1638,7 +1639,17 @@ function do_something (e)
             }
         }
 
-        return roll_d100( rnode, skill, adjusted_skill, roll_label( this ) );
+        var rl = roll_label( this );
+
+        switch( action )
+        {
+          case 'attack':
+              return roll_attack( rnode, skill, adjusted_skill, rl, data );
+          case 'parry':
+              return roll_parry ( rnode, skill, adjusted_skill, rl, data );
+          default:
+              return roll_d100  ( rnode, skill, adjusted_skill, rl );
+        }
     }
 
     rnode.textContent = 'What?';
