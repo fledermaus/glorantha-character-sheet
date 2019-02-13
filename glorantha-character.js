@@ -3605,6 +3605,10 @@ function load_group_data ()
 function clear_element (e,text)
 {
     var c;
+
+    if( !e )
+        return;
+
     while( c = e.firstChild )
         e.removeChild( c );
     e.textContent = '';
