@@ -3459,7 +3459,9 @@ function roll_hit_location (panel, node)
 {
     var loc  = roll_ndx( "1d20" );
     var name = '';
-    var id   = node.getAttribute( 'data-ge-id' ) || 'hit.generic';
+    var id   = ( (typeof(node) == 'string') ?
+                 node :
+                 node.getAttribute( 'data-ge-id' )  ) || 'hit.generic';
     var type = split_id( id )[ 1 ];
 
     switch( type )
