@@ -3527,7 +3527,7 @@ function process_ftoken( token, data )
           return [ 'north', 'northeast' ,
                    'east' , 'southeast' ,
                    'south', 'southwest' ,
-                   'west' , 'northwest' ][ roll_ndx('1d8') ];
+                   'west' , 'northwest' ][ roll_ndx('1d8') - 1 ];
     }
 
     var m;
