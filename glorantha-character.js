@@ -556,6 +556,64 @@ var groups =
       items:  []    },
 ];
 
+const F_MIN  = 0;
+const F_MAX  = 1;
+const F_LESS = 2;
+const F_RULE = 3;
+const F_PARRY= 4;
+const fumble_results =
+[
+    [  1,   5, -1, "Lose next parry"                                       ],
+    [  6,  10, -1, "Lose next attack"                                      ],
+    [ 11,  15, -1, "Lose next attack & parry"                              ],
+    [ 16,  20, -1, "Lose next attack, parry & dodge"                       ],
+    [ 21,  25, -1, "Lose next {{1d3}} attacks"                             ],
+    [ 26,  30, -1, "Lose next {{1d3}} attacks & parries"                   ],
+    [ 31,  35, -1, "Shield strap breaks/Lose shield"                       ],
+    [ 36,  40, -1, "Shield strap breaks/Lose shield & next attack"         ],
+    [ 41,  45, -1, "Armour strap breaks/Lose armour from {{hit.melee}}"    ],
+    [ 46,  50, -1, "Armour strap breaks/Lose armour from {{hit.melee}}/" +
+                   "Lose next attack & parry"                              ],
+    [ 51,  55, -1, "Fall, Lose this parry/Down for {{1d3}} rounds"         ],
+    [ 56,  60, -1, "Twist ankle. ½ move rate for {{5d10}} rounds"          ],
+    [ 61,  63, -1, "Twist ankle, fall/{{F51}}/{{F56}}"                     ],
+    [ 64,  67, -1, "Vision impaired/"           +
+                   "-25% to attacks & parries/" +
+                   "{{1d3}} rounds unengaged to clear"                     ],
+    [ 68,  70, -1, "Vision impaired/"           +
+                   "-50% to attacks & parries/" +
+                   "{{1d6}} rounds unengaged to clear"                     ],
+    [ 71,  72, -1, "Blinded. No attacks or parries/"   +
+                   "{{1d6}} rounds unengaged to clear"                     ],
+    [ 73,  74, -1, "Distracted. +25% bonus to attacking foes"              ],
+    [ 75,  78, -1, "Drop {{item}}: {{1d3}} rounds to recover"              ],
+    [ 79,  82, -1, "{{item}} knocked {{1d6}} meters to the {{compass}}"    ],
+    [ 83,  86, -1,
+      "{{item}} shattered (100% chance)/"          +
+      "-10% for each point of battle magic on it/" +
+      "-20% for each point of rune magic on it"                            ],
+    [ 87,  89, -1,
+      "Hit nearest friend (or self) for {{damage}} in {{hit.melee}}",
+      "Foe hits automatically unless they also fumbled"                    ],
+    [ 90,  91, -1,
+      "Hit nearest friend (or self) for {{DAMAGE}} in {{hit.melee}}",
+      "Foe hits automatically unless they also fumbled"                    ],
+    [ 92,  92, -1,
+      "Hit nearest friend (or self) for {{CRITICAL!}} in {{hit.melee}}",
+      "Foe hits automatically unless they also fumbled"                    ],
+    [ 93,  95, -1,
+      "Hit self for {{damage}} in the {{hit.melee}}",
+      "Foe hits automatically for MAX damage unless they also fumbled"     ],
+    [ 96,  97, -1,
+      "Hit self for {{DAMAGE}} in {{hit.melee}}",
+      "Foe hits automatically for CRITICAL damage unless they also fumbled"],
+    [ 98,  98, -1,
+      "Hit self for {{CRITICAL!}} in {{hit.melee}}",
+      "Foe hits automatically for CRITICAL damage unless they also fumbled"],
+    [ 99,  99, +1, "Son of a…"                                             ],
+    [100, 100, +2, "Mother of Dog…"                                        ],
+];
+
 const pinfo_pat = "//*[starts-with(@id, 'personal-info.')]";
 
 // =========================================================================
@@ -3432,10 +3490,99 @@ function apply_skill_constraints (data, skill)
     return skill * adjust;
 }
 
+function fumble_rule (n)
+{
+    for( const r of fumble_results )
+        if( (n >= r[ F_MIN ]) && (n <= r[ F_MAX ]) )
+            return r;
+    return [ 0, 0, -1, "There's no fumble rule at " + n ];
+}
+
+function process_ftoken( token, data )
+{
+    var damage;
+    var bonus;
+
+    switch( token )
+    {
+      case '{{damage}}':
+          // ordinarydamage roll:
+          return roll_damage( false, 'PASS', '', data )[ 0 ];
+      case '{{DAMAGE}}':
+          // max damage + ordinary bonus:
+          damage = roll_ndxseq( false, data.dam, true )[ 0 ]
+          bonus  = roll_ndxseq( false, get_entry('derived.dam').val )[ 0 ];
+          return '' + ( (1 * damage) + (1 * bonus) );
+      case '{{CRITICAL!}}':
+          // critical damage roll:
+          damage = roll_damage( false, 'CRIT!', '', data );
+          console.log( token + ' ' + damage[ 1 ] );
+          return damage[ 0 ];
+      case '{{hit.melee}}':
+          damage = roll_hit_location( false, 'hit.melee' );
+          return damage.name + ' (' + damage.loc + ')';
+      case '{{item}}':
+          return data.label;
+      case '{{compass}}':
+          return [ 'north', 'northeast' ,
+                   'east' , 'southeast' ,
+                   'south', 'southwest' ,
+                   'west' , 'northwest' ][ roll_ndx('1d8') ];
+    }
+
+    var m;
+    if( m = /\{\{F(\d+)\}\}/.exec( token ) )
+    {
+        var rule = fumble_rule( m[ 1 ] * 1 );
+        return process_fumble_text( rule[ F_RULE ] );
+    }
+
+    if( m = /\{\{([-+0-9d]+)\}\}/.exec( token ) )
+        return roll_ndxseq( false, m[ 1 ], false )[ 0 ];
+
+    return '??? ' + token + '???';
+}
+
+function process_fumble_text (r, data)
+{
+    const token = /(\{\{.+?\}\})/gu;
+    const func  = function (m,p1) { return process_ftoken( p1, data ); };
+    return [ r.replace( token, func ).split( '/' ) ];
+}
+
 function roll_fumble (result, type, text, data)
 {
-    if( result )
-        result.textContent = 'Fumble, see chart pg 205';
+    var lines = [ text ];
+
+    for( var f = 1; f > 0; )
+    {
+        var F = roll_ndx( '1d100' );
+        var fumble = fumble_rule( F );
+        var rule   = (type == 'parry') ? fumble[ F_PARRY ] : fumble[ F_RULE ];
+
+        if( !rule )
+            rule = fumble[ F_RULE ];
+
+        // most rules reduce f by 1
+        f += fumble[ F_LESS ];
+
+        for( const r of rule.split( '/' ) )
+            for( const p of process_fumble_text( r, data ) )
+                lines.push( F + ': ' + p );
+    }
+
+    clear_element( result, '' );
+
+    for( const l of lines )
+    {
+        var txt = element( 'span' );
+        var brk = element( 'br' );
+
+        txt.textContent = l;
+
+        result.appendChild( txt );
+        result.appendChild( brk );
+    }
 }
 
 function roll_parry (result, raw_skill, skill, prefix, data)
