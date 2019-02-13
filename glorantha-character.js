@@ -1979,6 +1979,7 @@ function _make_stat_value(dl, id, data, bonus, subtype)
                   (( data.cat == 'shield.shield' ) ? '🛡' : '⚔') + '  ';
               parry.style.float = 'left';
               parry.style.width = '2em';
+              sbtn.setAttribute( 'data-action', 'attack' );
           }
         case 'attr':
         case 'stat':
@@ -2012,7 +2013,6 @@ function _make_stat_value(dl, id, data, bonus, subtype)
     else
     {
         sbtn.setAttribute( 'class', 'roll' );
-        sbtn.setAttribute( 'data-action', 'attack' );
         if( data.type == 'rune' && rune_glyph[ data.key ] )
             sbtn.textContent = rune_glyph[ data.key ] + '  ';
         else
