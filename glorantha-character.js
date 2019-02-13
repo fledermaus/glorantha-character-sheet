@@ -3322,6 +3322,180 @@ function roll_d100 (result, raw_skill, skill, prefix)
     return [ rolled, label ];
 }
 
+function roll_damage (result, outcome, text, data)
+{
+    var damage = data.dam || 0;
+    var bonus  = (get_entry( 'derived.dam' ) || { val: 0 }).val;
+    var bspec  = (bonus == '0') ? '' : (isNaN(bonus) ? bonus : ('+' +  bonus));
+    var dspec;
+    var rolled;
+
+    switch( outcome )
+    {
+      case 'CRIT!':
+          switch (data.dtype)
+          {
+            case 'C': // critical crushes are the same as specials below
+                dspec = damage + bspec;
+                if( bonus )
+                    dspec += '+' + roll_ndxseq( false, bspec, true )[ 0 ];
+                break;
+            case 'SI':
+            case 'S':
+            case 'I':
+            default:
+                // max(2×damage) + bonus
+                dspec = damage + '+' + damage;
+                dspec = roll_ndxseq( false, dspec, true )[ 0 ] + bspec;
+                break;
+          }
+          break;
+      case 'SPEC!':
+          switch (data.dtype)
+          {
+            case 'C':
+                // crush: damage + bonus + max(bonus)
+                dspec = damage + bspec;
+                if( bonus )
+                    dspec += '+' + roll_ndxseq( false, bspec, true )[ 0 ];
+                break;
+                // slash or impale: 2×damage + bonus
+            case 'SI':
+            case 'S':
+            case 'I':
+            default:
+                dspec = damage + '+' + damage + bspec;
+                break;
+          }
+          break;
+      default:
+          dspec = damage + bspec;
+    }
+
+    rolled = roll_ndxseq( false, dspec , false );
+
+    if( result )
+    {
+        var rdtext = element( 'span' );
+        var loctxt = element( 'span' );
+        var tgt    = split_id( data.cat || 'melee.' )[ 0 ];
+        var how    = (tgt == 'missile') ? 'hit.missile' : 'hit.melee';
+        var hit    = roll_hit_location( false, how );
+
+        result.textContent = text || '';
+        rdtext.textContent = '💥' + rolled[ 1 ];
+        loctxt.textContent = '🞋' + hit.desc;
+
+        if( text )
+            result.appendChild( element('br') );
+
+        result.appendChild( rdtext );
+        result.appendChild( element('br') );
+        result.appendChild( loctxt );
+    }
+}
+
+function apply_skill_constraints (data, skill)
+{
+    var min_str = (data.str || 0) * 1;
+    var min_dex = (data.dex || 0) * 1;
+    var str     = (get_entry( 'stats.str' ) || { val: 0 }).val * 1;
+    var dex     = (get_entry( 'stats.dex' ) || { val: 0 }).val * 1;
+    var adjust  = 1;
+
+    // strength can provide a dex bonus only if there's
+    // a minimum strength requirement (and we exceed it)
+    if( min_str )
+    {
+        if( str <  min_str )
+            adjust = 0.5;
+        else // excess strength adds to effective dex at a 2:1 ratio
+            dex += (str - min_str) * 0.5;
+    }
+
+    if( min_dex && (dex < min_dex) )
+        adjust = 0.5;
+
+    return skill * adjust;
+}
+
+function roll_fumble (result, type, text, data)
+{
+    if( result )
+        result.textContent = 'Fumble, see chart pg 205';
+}
+
+function roll_parry (result, raw_skill, skill, prefix, data)
+{
+    var weapon = split_id( data.cat );
+    var group  = weapon[ 0 ];
+    var name   = weapon[ 1 ];
+    var alt;
+
+    // missile weaspons parry with either the melee version of their skill
+    // (cf javelin) or with the base + modifier value of quarterstaff
+    // (ie NOT the fully trained quarterstaff skill):
+    if( group == 'missile' )
+    {
+        if( (alt = get_entry( 'melee.' + name         )) ||
+            (alt = get_entry( 'melee.' + name + '.1H' ))  )
+        {
+            var node;
+            if( node = get_dom_node( 'melee.' + alt.key ) )
+                skill = (node.textContent || 0) * 1;
+        }
+        else if( (alt = get_entry( 'melee.quarterstaff.1H' )) ||
+                 (alt = get_entry( 'melee.quarterstaff.2H' )) )
+        {
+            var mmod = group_modifier( get_group( 'melee' ) );
+            skill = ((alt.base || 0) * 1) + mmod;
+        }
+    }
+
+    skill = apply_skill_constraints( data, skill );
+
+    var d100    = roll_d100( false, raw_skill, skill, prefix );
+    var rolled  = d100[ 0 ];
+    var outcome = d100[ 1 ];
+    var text    = ( (prefix ? (prefix + " ") : '🛡') +
+                    rolled + "/" + skill + " Parry = "  + outcome );
+
+    if( outcome == 'FUMBLE!' )
+        return roll_fumble( result, 'parry', text, data );
+
+    if( result )
+        result.textContent = text;
+}
+
+function roll_attack (result, raw_skill, skill, prefix, data)
+{
+    if( isNaN( raw_skill ) || raw_skill <= 0 )
+        return roll_d100( result, raw_skill, skill, prefix );
+
+    skill = apply_skill_constraints( data, skill );
+
+    var d100    = roll_d100( null, raw_skill, skill, prefix );
+    var rolled  = d100[ 0 ];
+    var outcome = d100[ 1 ];
+    var text    = ( (prefix ? (prefix + " ") : '') +
+                     rolled + "/" + skill + " = "   +
+                     ((outcome == 'FAIL') ? 'MISSED' : outcome) );
+
+    switch( outcome )
+    {
+      case 'FUMBLE!':
+          return roll_fumble( result, 'attack', text, data );
+
+      case 'FAIL':
+          clear_element( result, '🎲' );
+          result.textContent = text;
+          return;;
+
+      default:
+          return roll_damage( result, outcome, text, data );
+    }
+}
+
 function roll_ndx (ndx, max)
 {
     var seq = ndx.split('d');
