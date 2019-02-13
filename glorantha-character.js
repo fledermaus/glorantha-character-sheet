@@ -3500,7 +3500,7 @@ function roll_attack (result, raw_skill, skill, prefix, data)
       case 'FAIL':
           clear_element( result, '🎲' );
           result.textContent = text;
-          return;;
+          return;
 
       default:
           return roll_damage( result, outcome, text, data );
