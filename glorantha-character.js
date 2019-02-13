@@ -1743,11 +1743,22 @@ function get_entry (ident)
     if( !grp )
         return null;
 
+    var item;
     for( const i of grp.items )
-        if( i.key == name )
-            return i;
+    {
+        if( i.key != name )
+            continue;
 
-    return null;
+        item = i;
+        break;
+    }
+
+    var derived;
+    if( (group == 'derived') && item )
+        if( derived = get_dom_node( ident ) )
+            item.val = derived.textContent;
+
+    return item;
 }
 
 function group_modifier (g)
