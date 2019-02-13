@@ -3363,13 +3363,15 @@ function roll_ndxseq (result, skill, max)
         else            { rolled -= r; }
     }
 
+    var text = dice.join(' ') + ' = ' + rolled;
+
     if( result )
     {
         clear_element( result, '🎲' );
-        result.textContent = dice.join(' ') + ' = ' + rolled;
+        result.textContent = text;
     }
 
-    return rolled;
+    return [ rolled, text ];
 }
 
 function roll_nx (e)
