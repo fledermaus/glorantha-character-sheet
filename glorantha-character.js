@@ -3463,6 +3463,7 @@ function roll_hit_location (panel, node)
                  node :
                  node.getAttribute( 'data-ge-id' )  ) || 'hit.generic';
     var type = split_id( id )[ 1 ];
+    var text = '';
 
     switch( type )
     {
@@ -3554,11 +3555,14 @@ function roll_hit_location (panel, node)
     type = type == 'melee' ? 'Mêlée' : ucfirst( type );
 
     if( name )
-        panel.textContent = 'Hit (' + type + ') ' + loc + ' = ' + name;
+        text = 'Hit (' + type + ') ' + loc + ' = ' + name;
     else
-        panel.textContent = '🥊 Bam! Right in the #' + loc;
+        text = '🥊 Bam! Right in the #' + loc;
 
-    return loc;
+    if( panel )
+        panel.textContent = text;
+
+    return { loc: loc, name: name, desc: text };
 }
 
 // =========================================================================
