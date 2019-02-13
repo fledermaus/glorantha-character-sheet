@@ -3404,6 +3404,8 @@ function roll_damage (result, outcome, text, data)
         result.appendChild( element('br') );
         result.appendChild( loctxt );
     }
+
+    return rolled;
 }
 
 function apply_skill_constraints (data, skill)
