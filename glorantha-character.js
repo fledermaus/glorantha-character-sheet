@@ -128,6 +128,10 @@ var extn_template =
                draw:   draw_default_input_form,
                fields: [ { name: 'deity',  type: 'text' } ,
                          { name: 'points', type: 'uint' } ] },
+    misc:    { save:   add_new_misc,
+               draw:   draw_default_input_form,
+               fields: [ { name: 'label'   , type: 'text' } ,
+                         { name: 'quantity', type: 'uint' } ] },
     // rune:    { save: add_new_rune,
     //            draw: draw_rune_input_form,
     //            fields: [ { name: 'label', type: 'text' } ,
@@ -554,6 +558,13 @@ var groups =
       label: 'Ticks',
       draw:   true  ,
       items:  []    },
+    { group:  'inventory',
+      label:  'Inventory',
+      draw:   true,
+      extend: 'misc',
+      items: [ { key: 'wheels', type: 'misc', label: 'Wheels', val: 0 } ,
+               { key: 'lunars', type: 'misc', label: 'Lunars', val: 0 } ,
+               { key: 'clacks', type: 'misc', label: 'Clacks', val: 0 } ] },
 ];
 
 const F_MIN  = 0;
@@ -1406,6 +1417,7 @@ function handle_edit_event (e)
 
       case 'skill':
       case 'attr':
+      case 'misc':
           update_item( id, val );
           break;
 
@@ -1729,7 +1741,7 @@ function editclass (node)
 function updateclass (node)
 {
     var nc = ' ' + node.getAttribute('class') + ' ';
-    for( const c of ['pinfo', 'skill', 'attr', 'prune', 'hit', 'rp', 'weapon', 'manual-buff'] )
+    for( const c of ['pinfo', 'skill', 'attr', 'prune', 'hit', 'rp', 'weapon', 'manual-buff', 'misc'] )
         if( nc.indexOf( ' ' + c + ' ') >= 0 )
             return c;
 
@@ -2123,6 +2135,18 @@ function make_rp (dl, id, data)
     dl.appendChild( dd  );
 }
 
+function make_misc (dl, id, data)
+{
+    var dd   = element( 'dd' );
+    var val  = data.val;
+    var cssc = 'editable misc uint';
+    var sval = element( 'span', 'id', id, 'class', cssc );
+
+    sval.textContent = '' + val;
+    dd.appendChild( sval );
+    dl.appendChild( dd  );
+}
+
 function make_stat_value (dl, id, data, bonus)
 {
     _make_stat_value( dl, id, data, bonus, 'skill' );
@@ -2263,6 +2287,9 @@ function make_item (dl, group, data, width, bonus)
           break;
       case 'rp':
           make_rp( dl, id, data );
+          break;
+      case 'misc':
+          make_misc( dl, id, data );
           break;
       case 'stat':
       case 'rune':
@@ -2487,6 +2514,41 @@ function draw_new_rp (group, skill)
             row.snapshotItem( i ).style.width = width;
 
     update_item( sid, skill.val );
+}
+
+// add an inventory item to the group (or refresh if it's already there)
+function draw_new_misc (group, inv)
+{
+    if( !group || !group.group )
+        return;
+
+    var lst   = document.getElementById( group.group );
+
+    if( !lst )
+        return;
+
+    var gid   = lst.getAttribute( 'id' );
+    var iid   = gid + '.' + inv.key;
+    var width = group_label_col_width( group );
+    var iqty  = document.getElementById( iid );
+
+    if( iqty )
+    {
+        iqty.textContent = '' + inv.val;
+    }
+    else
+    {
+        var iel = make_item( lst, gid, inv, width, 0 );
+        activate_input_fields( iel, "after" );
+    }
+
+    var row = xpath( 'dt', lst );
+
+    if( row )
+        for( var i = 0; i < row.snapshotLength; i++ )
+            row.snapshotItem( i ).style.width = width;
+
+    update_item( iid, inv.val );
 }
 
 // =========================================================================
@@ -3041,6 +3103,34 @@ function add_new_rp (form_data)
     var skill = { key: key, type: 'rp', label: label, cur: total, val: total };
     group.items.push( skill );
     draw_new_rp( group, skill );
+    return true;
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function add_new_misc (form_data)
+{
+    var group = get_group( form_data.group );
+
+    if( !group )
+        return "Cannot add entry to group " + form_data.group;
+
+    var label = form_data.label;
+    var total = form_data.quantity * 1;
+    var key   = label_to_key( label );
+
+    if( !key )
+        return "'" + label + "' is not a useful inventory label";
+
+    if( total < 0 )
+        return "Total (" + total + ") cannot be less than zero";
+
+    var exists;
+    if( exists = get_entry( group.group + '.' + key ) )
+        return "Entry for " + item_label( exists ) + " already exists";
+
+    var inv = { key: key, type: 'misc', label: label, val: total };
+    group.items.push( inv );
+    draw_new_misc( group, inv );
     return true;
 }
 
