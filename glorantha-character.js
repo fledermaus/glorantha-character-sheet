@@ -3094,7 +3094,7 @@ function add_new_rp (form_data)
         return "'" + label + "' is not a useful deity name";
 
     if( total < 0 )
-        return "Total (" + level + ") cannot be less than zero";
+        return "Total (" + total + ") cannot be less than zero";
 
     var exists;
     if( exists = get_entry( group.group + '.' + key ) )
