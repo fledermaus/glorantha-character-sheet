@@ -2454,7 +2454,7 @@ function draw_new_tick (skill)
     update_item( sid, skill.val );
 }
 
-// add a skill to the group (or refresh if it's already there)
+// add a rune-pool to the group (or refresh if it's already there)
 function draw_new_rp (group, skill)
 {
     if( !group || !group.group )
