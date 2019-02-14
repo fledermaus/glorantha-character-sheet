@@ -2386,7 +2386,8 @@ function refresh_group (g)
     var inode;
     for( const i of g.items )
         if( inode = document.getElementById( g.group + '.' + i.key ) )
-            inode.textContent = '' + (g.bonus + (i.val * 1));
+            inode.textContent =
+              '' + (g.bonus + ((i.base || 0) * 1) + (i.val * 1));
 }
 
 // add a skill to the group (or refresh if it's already there)
