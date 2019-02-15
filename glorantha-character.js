@@ -3060,6 +3060,10 @@ function add_new_weapon (form_data)
     var key   = label_to_key( label );
     var cat   = group.group + '.' + ''
 
+    var exists;
+    if( exists = get_entry( group.group + '.' + key ) )
+        return "Skill " + item_label( exists ) + " already exists";
+
     var skill = { key  : key   ,
                   label: label ,
                   type : 'weapon',
