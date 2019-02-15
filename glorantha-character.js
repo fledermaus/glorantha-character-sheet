@@ -2352,13 +2352,13 @@ function add_stat_groups ()
         var title = element( 'h3', 'id', g.group + '-title' );
         title.textContent = group_title( g );
 
-        var template;
+        var template = null;
         if( template = extn_template[ g.extend ] )
         {
             if( template.draw && template.save )
             {
-                var func = template.draw;
-                var handler = function () { func( g.group, g.extend ) };
+                var handler =
+                    function (e) { extn_template[ g.extend ].draw( g.group, g.extend ) };
                 var nid = g.group + '.new-item';
                 var add = div( 'id', nid, 'class', 'new-item' );
                 add.addEventListener( 'click', handler );
