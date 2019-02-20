@@ -341,6 +341,15 @@ var weapons =
     },
 };
 
+const extra_ui =
+{
+    ticks:
+    {
+        label:   [ "Click" ],
+        content: [ [ "span", "id", "tick-button", false, "🗹 ⋯"] ]
+    },
+};
+
 var standard_skills = {};
 var groups =
 [
@@ -2242,6 +2251,54 @@ function item_label (data)
     }
 }
 
+function add_extra_ui_element (node, spec)
+{
+    if( typeof( spec ) == 'string' )
+    {
+        var el = element( 'span' );
+        el.textContent = spec;
+        node.appendChild( el );
+        return;
+    }
+
+    var elt = element( spec[ 0 ] );
+    for( var i = 1; i < spec.length; i++ )
+    {
+        var attr;
+        if( attr = spec[ i++ ] )
+            elt.setAttribute( attr, spec[ i ] );
+        else
+            elt.textContent = spec[ i ];
+    }
+
+    node.appendChild( elt );
+    return;
+}
+
+function add_extra_ui_items (dl, group, width)
+{
+    var spec = extra_ui[ group ];
+
+    if( !spec )
+        return false;
+
+    var dt = element( 'dt' );
+    var dd = element( 'dd' );
+
+    dt.style.width = width;
+
+    for( const i of (spec.label || []) )
+        add_extra_ui_element( dt, i );
+
+    for( const i of (spec.content || []) )
+        add_extra_ui_element( dd, i );
+
+    dl.appendChild( dt );
+    dl.appendChild( dd );
+
+    return dt;
+}
+
 function make_item (dl, group, data, width, bonus)
 {
     var dt = element( 'dt' );
@@ -2305,7 +2362,7 @@ function make_item (dl, group, data, width, bonus)
 
 function group_label_col_width (g)
 {
-    var width = 1;
+    var width = 3;
     var w;
 
     for( const i of g.items )
@@ -2369,6 +2426,8 @@ function add_stat_groups ()
 
         var lst = element( 'dl', 'id', g.group );
         var width = group_label_col_width( g );
+
+        add_extra_ui_items( lst, g.group, width );
 
         for( const i of g.items )
             make_item( lst, g.group, i, width, g.bonus ? g.bonus : 0 );
