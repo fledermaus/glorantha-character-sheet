@@ -132,8 +132,9 @@ var extn_template =
                          { name: 'points', type: 'uint' } ] },
     misc:    { save:   add_new_misc,
                draw:   draw_default_input_form,
-               fields: [ { name: 'label'   , type: 'text' } ,
-                         { name: 'quantity', type: 'uint' } ] },
+               fields: [ { name: 'label'     , type: 'text' } ,
+                         { name: 'quantity'  , type: 'uint' } ,
+                         { name: 'value/each', type: 'uflt' } ] },
     // rune:    { save: add_new_rune,
     //            draw: draw_rune_input_form,
     //            fields: [ { name: 'label', type: 'text' } ,
@@ -573,9 +574,9 @@ var groups =
       label:  'Inventory',
       draw:   true,
       extend: 'misc',
-      items: [ { key: 'wheels', type: 'misc', label: 'Wheels', val: 0 } ,
-               { key: 'lunars', type: 'misc', label: 'Lunars', val: 0 } ,
-               { key: 'clacks', type: 'misc', label: 'Clacks', val: 0 } ] },
+      items: [ { key: 'wheels', type: 'misc', label: 'Wheels', val: 0, per: 20  } ,
+               { key: 'lunars', type: 'misc', label: 'Lunars', val: 0, per: 1   } ,
+               { key: 'clacks', type: 'misc', label: 'Clacks', val: 0, per: 0.1 } ] },
 ];
 
 const F_MIN  = 0;
@@ -1428,7 +1429,6 @@ function handle_edit_event (e)
 
       case 'skill':
       case 'attr':
-      case 'misc':
           update_item( id, val );
           break;
 
@@ -1438,6 +1438,10 @@ function handle_edit_event (e)
 
       case 'manual-buff':
           manual_buff_val = val * 1;
+          break;
+
+      case 'misc':
+          update_misc( id );
           break;
 
       default:
@@ -2047,6 +2051,36 @@ function update_item (i,v,norecurse)
     }
 }
 
+function update_misc (i)
+{
+    var id  = i.replace( /\.per$/, '' );
+    var val = get_dom_node( id );
+
+    if( !val )
+        return;
+
+    var tot = get_dom_node( id + '.tot' );
+    var per = get_dom_node( id + '.per' );
+
+    val = (val.textContent || 0) * 1;
+    per = per ? ((per.textContent || 0) * 1) : 0;
+
+    if( tot )
+        tot.textContent = '' + ( val * per ) + 'L';
+
+    var item = get_entry( id );
+
+    if( item )
+    {
+        var nv;
+
+        item.per = per;
+        item.val = val;
+
+        if( nv = JSON.stringify( item ) )
+            storage.set( id, nv );
+    }
+}
 // =========================================================================
 // UI rendering
 
@@ -2149,12 +2183,24 @@ function make_rp (dl, id, data)
 function make_misc (dl, id, data)
 {
     var dd   = element( 'dd' );
-    var val  = data.val;
-    var cssc = 'editable misc uint';
-    var sval = element( 'span', 'id', id, 'class', cssc );
+    var val  = (data.val == null) ? 1 : (data.val * 1);
+    var per  = data.per || 0;
+    var cssc = 'editable misc invdata ';
+    var sval = element( 'span', 'id', id, 'class', cssc + 'uint' );
+    var sper = element( 'span', 'id', id + '.per', 'class', cssc + 'uflt' );
+    var stot = element( 'span', 'id', id + '.tot', 'class', 'invdata' );
+    var at   = element( 'span' );
 
     sval.textContent = '' + val;
+    sper.textContent = '' + per;
+    stot.textContent = '  ' + (val * per) + 'L';
+    at.textContent   = ' @ ';
+
     dd.appendChild( sval );
+    dd.appendChild( at   );
+    dd.appendChild( sper );
+    dd.appendChild( stot );
+
     dl.appendChild( dd  );
 }
 
@@ -2591,11 +2637,15 @@ function draw_new_misc (group, inv)
     var gid   = lst.getAttribute( 'id' );
     var iid   = gid + '.' + inv.key;
     var width = group_label_col_width( group );
-    var iqty  = document.getElementById( iid );
+    var iqty  = get_dom_node( iid );
 
     if( iqty )
     {
+        var iper = get_dom_node( iid + '.per' );
+
         iqty.textContent = '' + inv.val;
+        if( iper )
+            iper.textContent = '' + inv.per;
     }
     else
     {
@@ -3183,6 +3233,9 @@ function add_new_misc (form_data)
     var label = form_data.label;
     var total = form_data.quantity * 1;
     var key   = label_to_key( label );
+    var per   = ( isNaN( form_data[ 'value/each' ] ) ?
+                  0 :
+                  (form_data[ 'value/each' ] * 1) );
 
     if( !key )
         return "'" + label + "' is not a useful inventory label";
@@ -3194,7 +3247,7 @@ function add_new_misc (form_data)
     if( exists = get_entry( group.group + '.' + key ) )
         return "Entry for " + item_label( exists ) + " already exists";
 
-    var inv = { key: key, type: 'misc', label: label, val: total };
+    var inv = { key: key, type: 'misc', label: label, val: total, per: per };
     group.items.push( inv );
     draw_new_misc( group, inv );
     return true;
