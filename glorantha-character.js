@@ -2721,7 +2721,7 @@ function draw_default_input_form (grp, type)
     cancel.addEventListener( 'click', dismiss_this_form );
 
     var save = div( 'class', 'new-item-form-save' );
-    save.textContent = "Add Skill";
+    save.textContent = "Add Item";
     save.addEventListener( 'click', function(){ process_form( fid, type ); } );
 
     form.appendChild( cancel );
