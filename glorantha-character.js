@@ -37,6 +37,7 @@ var suppressed_keys =
     {
         'text': [],
         'uint': [],
+        'uflt': [],
         'int' : [],
         'dice': [],
         'base': [],
@@ -45,6 +46,7 @@ var suppressed_keys =
 var allowed_keys =
     {
         'uint': [],
+        'uflt': [],
         'int' : [],
         'dice': [],
         'base': [],
@@ -1740,7 +1742,7 @@ function do_something (e)
 function editclass (node)
 {
     var nc = ' ' + node.getAttribute('class') + ' ';
-    for( const c of ["text", "uint", "int", "blob", "dice", "base"] )
+    for( const c of ["text", "uint", "int", "blob", "dice", "base", "uflt"] )
         if( nc.indexOf( ' ' + c + ' ') >= 0 )
             return c;
 
@@ -2636,6 +2638,7 @@ function field_widget (f,g)
             case "text": widget.textContent = "-"; break;
             case "base": widget.textContent = "0"; break;
             case "uint": widget.textContent = "0"; break;
+            case "uflt": widget.textContent = "0.0"; break;
         }
     }
     else if ( Array.isArray( etype ) )
@@ -4468,6 +4471,7 @@ function initialise ()
     var node;
     const uint_allowed = "0123456789";
     const int_allowed  = "-" + uint_allowed;
+    const uflt_allowed = "." + uint_allowed;
     const dice_allowed = "0123456789+-d ";
     const base_allowed = "abcdefghijklmnopqrstuvwxyz*." + uint_allowed;
 
@@ -4532,6 +4536,8 @@ function initialise ()
     // the digits
     for( var i = 0; i < uint_allowed.length; i++ )
         allowed_keys['uint'][uint_allowed.charCodeAt( i )] = true;
+    for( var i = 0; i < uflt_allowed.length; i++ )
+        allowed_keys['uflt'][uflt_allowed.charCodeAt( i )] = true;
     for( var i = 0; i < int_allowed.length; i++ )
         allowed_keys['int'][int_allowed.charCodeAt( i )] = true;
 
