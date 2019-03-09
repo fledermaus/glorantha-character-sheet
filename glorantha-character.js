@@ -130,6 +130,13 @@ var extn_template =
                draw:   draw_default_input_form,
                fields: [ { name: 'deity',  type: 'text' } ,
                          { name: 'points', type: 'uint' } ] },
+    rmagic:  { save:   add_new_runespell,
+               draw:   draw_default_input_form,
+               fields: [ { name: 'name' , type: 'text'                   } ,
+                         { name: 'cult' ,
+                           type: function (i) { return rune_cults( i ) } } ,
+                         { name: 'runes', type: 'runes', multi: true     } ,
+                         { name: 'cost' , type: 'uint'                   } ] },
     misc:    { save:   add_new_misc,
                draw:   draw_default_input_form,
                fields: [ { name: 'label'     , type: 'text' } ,
@@ -422,6 +429,11 @@ var groups =
       draw:   true,
       extend: 'rp',
       items:  [] },
+    { group: 'rune-magic',
+      label: 'Rune Magic',
+      draw:   true,
+      extend: 'rmagic',
+      items: [ ] },
     { group: 'emo',
       label: 'Passions',
       extend: 'emotion',
@@ -1429,6 +1441,7 @@ function handle_edit_event (e)
 
       case 'skill':
       case 'attr':
+      case 'runespell':
           update_item( id, val );
           break;
 
@@ -1674,6 +1687,8 @@ function do_something (e)
     if( (atype == 'attr') && (rtype == 'uint') )
         return setup_nx_roll( rnode, this, target.textContent );
 
+    if( (atype == 'runespell') && (rtype == 'uint') )
+        return cast_runespell( rnode, this.getAttribute( 'data-rune' ), id );
 
     if( atype == 'skill' && rtype == 'uint' )
     {
@@ -1757,7 +1772,7 @@ function editclass (node)
 function updateclass (node)
 {
     var nc = ' ' + node.getAttribute('class') + ' ';
-    for( const c of ['pinfo', 'skill', 'attr', 'prune', 'hit', 'rp', 'weapon', 'manual-buff', 'misc'] )
+    for( const c of ['pinfo', 'skill', 'attr', 'prune', 'hit', 'rp', 'weapon', 'manual-buff', 'runespell', 'misc'] )
         if( nc.indexOf( ' ' + c + ' ') >= 0 )
             return c;
 
@@ -2180,6 +2195,32 @@ function make_rp (dl, id, data)
     dl.appendChild( dd  );
 }
 
+function make_runespell (dl, id, data)
+{
+    var dd   = element( 'dd' );
+    var val  = data.val;
+    var cssc = 'editable uint runespell';
+    var sval = div( 'id', id, 'class', cssc );
+    var rdiv = div( 'class', 'runeset' );
+
+    for( const r of (data.runes || []) )
+    {
+        var sbtn = div( 'class', 'roll', 'data-ge-id', id, 'data-rune', r );
+
+        sbtn.textContent = rune_glyph[ r ];
+        sbtn.style.width = '2em';
+        rdiv.appendChild( sbtn );
+    }
+
+    sval.textContent = '' + val;
+    sval.style.width = '2em';
+    rdiv.style.width = '6em';
+
+    dd.appendChild( sval );
+    dd.appendChild( rdiv );
+    dl.appendChild( dd   );
+}
+
 function make_misc (dl, id, data)
 {
     var dd   = element( 'dd' );
@@ -2396,6 +2437,9 @@ function make_item (dl, group, data, width, bonus)
       case 'misc':
           make_misc( dl, id, data );
           break;
+      case 'runespell':
+          make_runespell( dl, id, data );
+          break;
       case 'stat':
       case 'rune':
       case 'dice':
@@ -2562,6 +2606,38 @@ function draw_new_skill (group, skill)
             row.snapshotItem( i ).style.width = width;
 
     update_item( sid, '' + score );
+}
+
+// add a rune spell to the group (or refresh if it's already there)
+function draw_new_runespell (group, skill)
+{
+    if( !group || !group.group )
+        return;
+
+    var lst   = document.getElementById( group.group );
+
+    if( !lst )
+        return;
+
+    var gid   = lst.getAttribute( 'id' );
+    var sid   = gid + '.' + skill.key;
+    var width = group_label_col_width( group );
+    var sval  = document.getElementById( sid );
+
+    if( !sval )
+    {
+        var iel = make_item( lst, gid, skill, width, 0 );
+        console.log( iel );
+        activate_dice( iel, "after" );
+    }
+
+    var row = xpath( 'dt', lst );
+
+    if( row )
+        for( var i = 0; i < row.snapshotLength; i++ )
+            row.snapshotItem( i ).style.width = width;
+
+    update_item( sid, skill.val );
 }
 
 function draw_new_tick (skill)
@@ -2733,6 +2809,25 @@ function field_widget (f,g)
         }
     }
     return [ label, widget ];
+}
+
+function rune_cults (id)
+{
+    var ec  = 'new-item-field-widget choice';
+    var sel = element( 'select', 'id', id );
+    var rpg = get_group( 'rp' );
+
+    var widget = div( 'class', ec );
+    widget.appendChild( sel );
+
+    for( const o of rpg.items )
+    {
+        var opt = element( 'option', 'value', o.key );
+        opt.textContent = o.label || ucfirst( o.key );
+        sel.appendChild( opt );
+    }
+
+    return widget;
 }
 
 function weapon_classes (id, wgroup)
@@ -3152,6 +3247,46 @@ function add_new_emotion (form_data)
     return true;
 }
 
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function add_new_runespell (form_data)
+{
+    var group = get_group( form_data.group );
+
+    if( !group )
+        return "Cannot add entry to group " + form_data.group;
+
+    var label = form_data.name;
+    var runes = form_data.runes;
+    var cult  = form_data.cult;
+    var cost  = form_data.cost * 1;
+    var key   = cult + '.' + label_to_key( label );
+
+    if( typeof( runes ) == 'string' )
+        runes = [ runes ];
+
+    if( !key )
+        return "'" + label + "' is not a useful skill name";
+
+    if( cost < 0 )
+        return "Cost (" + cost + ") cannot be less than zero";
+
+    var exists;
+    if( exists = get_entry( group.group + '.' + key ) )
+        return "Rune Spell " + item_label( exists ) + " already listed";
+
+    var spell = { key:   key,
+                  type: 'runespell',
+                  label: label,
+                  cult:  cult,
+                  val:   cost,
+                  runes: runes };
+
+    group.items.push( spell );
+    draw_new_runespell( group, spell );
+
+    return true;
+}
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function add_new_skill (form_data)
 {
@@ -3992,6 +4127,70 @@ function roll_prune (panel, node, prune)
     }
 
     return undefined;
+}
+
+function get_rune_level (r)
+{
+    var rdata = get_entry( 'rune.' + r );
+
+    if( rdata )
+        return rdata.val;
+
+    var prune = get_group( 'prune' );
+
+    for( const pr of prune.items )
+    {
+        switch( pr.subkeys.indexOf( r ) )
+        {
+          case 0: return pr.val;
+          case 1: return 100 - pr.val;
+        }
+    }
+
+    return 0;
+}
+
+function cast_runespell (panel, rune, id)
+{
+    var spell = get_entry( id );
+
+    if( !spell )
+    {
+        panel.textContent = 'Unknown rune spell ' + id;
+        return;
+    }
+    var cult  = spell.cult;
+    var rp    = get_entry( 'rp.' + cult );
+
+    if( !rp )
+    {
+        panel.textContent = 'Not an initiate of the ' + cult + ' cult';
+        return;
+    }
+
+    var level = get_rune_level( rune );
+    var glyph = rune_glyph[ rune ] || '☯';
+    var cost  = spell.val * 1;
+
+    if( rp.cur < cost )
+    {
+        panel.textContent = 'Not enough ' + rp.label + ' rune points';
+        return;
+    }
+
+    var rv = roll_d100( panel, level, level, glyph + ' ' + spell.label );
+
+    switch( rv[ 1 ] )
+    {
+      case 'FAIL':
+      case 'FUMBLE':
+          return rv;
+    }
+
+    var cid = 'rp.' + cult + '.cur';
+    set_dom_node_text( cid, '' + ((rp.cur * 1) - cost), true );
+
+    return rv;
 }
 
 function setup_nx_roll (panel, node, attr)
