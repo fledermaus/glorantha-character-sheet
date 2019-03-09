@@ -356,7 +356,9 @@ const extra_ui =
     ticks:
     {
         label:   [ "Click" ],
-        content: [ [ "span", "id", "tick-button", false, "🗹 ⋯"] ]
+        content: [ [ "span",
+                     "id"   , "tick-button",
+                     "class", "button exec", false, "🗹 ⋯"] ]
     },
 };
 
