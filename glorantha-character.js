@@ -1234,6 +1234,7 @@ function import_item( grp, data )
         }
 
         var val  = new_item.val;
+        var cur  = new_item.cur;
         var base = entry_base( cur_item );
 
         switch( cur_item.type )
@@ -1251,6 +1252,9 @@ function import_item( grp, data )
         }
 
         // flush to UI and storage:
+        if( cur != undefined )
+            set_dom_node_text( id + '.cur', '' + cur );
+
         if( val != undefined )
             set_dom_node_text( id, val, true );
         else
