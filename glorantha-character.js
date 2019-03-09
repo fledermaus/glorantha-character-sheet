@@ -2104,7 +2104,7 @@ function update_misc (i)
 function _make_stat_value(dl, id, data, bonus, subtype)
 {
     var dd   = element( 'dd' );
-    var cssc = (data.noedit ? '' : 'editable ') + subtype + ' ';
+    var cssc = (data.noedit ? 'derived ' : 'editable ') + subtype + ' ';
     var val  = data.val;
     var sval = element( 'span' );
     var sbtn = element( 'span', 'data-ge-id', id );
