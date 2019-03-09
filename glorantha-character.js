@@ -1927,7 +1927,6 @@ function update_rp (id,val)
     return true;
 }
 
-
 function _update_prune (p,i,val)
 {
     var update;
