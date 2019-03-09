@@ -1270,7 +1270,28 @@ function import_item( grp, data )
     else if( new_item.key )
     {
         group.items.push( new_item );
-        draw_new_skill( group, new_item );
+        switch( grp )
+        {
+          case 'ticks':
+              draw_new_tick( new_item );
+              break;
+
+          case 'misc':
+              draw_new_misc( group, new_item );
+              break;
+
+          case 'rune-magic':
+              draw_new_runespell( group, new_item );
+              break;
+
+          case 'rp':
+              draw_new_rp( group, new_item );
+              break;
+
+          default:
+              draw_new_skill( group, new_item );
+        }
+
         return rid;
     }
     else // oops. predefined item in exporter that no longer exists
