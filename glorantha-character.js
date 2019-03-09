@@ -3248,6 +3248,11 @@ function add_new_emotion (form_data)
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function debug_new_skill (form_data)
+{
+    console.log( form_data );
+    return true;
+}
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function add_new_runespell (form_data)
 {
