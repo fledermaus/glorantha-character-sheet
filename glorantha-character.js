@@ -1445,6 +1445,7 @@ function handle_edit_event (e)
           break;
 
       default:
+          console.log( 'No edit handler for ' + uc );
           return;
     }
 }
