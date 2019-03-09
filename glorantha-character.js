@@ -1249,6 +1249,10 @@ function import_item( grp, data )
                 if( !isNaN( bonus ) )
                     val += bonus + base;
             break;
+
+          case 'misc':
+            set_dom_node_text( id + '.per',  '' + cur_item.per );
+            break;
         }
 
         // flush to UI and storage:
