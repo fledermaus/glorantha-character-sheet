@@ -1670,9 +1670,9 @@ function do_something (e)
     if( tick_pending && (id == 'stats.pow') )
         return tick_skill( id, rnode );
 
-    if( atype == 'attr' )
-        if( rtype == 'uint' )
-            return setup_nx_roll( rnode, this, target.textContent );
+    if( (atype == 'attr') && (rtype == 'uint') )
+        return setup_nx_roll( rnode, this, target.textContent );
+
 
     if( atype == 'skill' && rtype == 'uint' )
     {
