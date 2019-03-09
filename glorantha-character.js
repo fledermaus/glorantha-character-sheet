@@ -1146,11 +1146,15 @@ function export_data ()
         var gcache = [];
 
         for( const i of g.items )
+        {
             if( !i.noedit )
+            {
                 if( skill_is_standard( g.group + '.' + i.key ) )
                     gcache.push( (i.base == null) ? [ i.key, i.val ] : [ i.key, i.val, i.base ] );
                 else
                     gcache.push( [ false, i ] );
+            }
+        }
 
         data[ g.group ] = gcache;
     }
