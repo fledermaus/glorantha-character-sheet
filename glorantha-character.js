@@ -2671,6 +2671,8 @@ function field_widget (f,g)
     var etype = f.type;
     var wid   = 'new-item-widget-' + f.name;
     var label = div( 'class', 'new-item-field-label'  );
+    var multi = f.multi;
+
     label.textContent  = ucfirst( f.name ) + ':';
 
     if ( typeof( etype ) == "function" )
@@ -2695,6 +2697,10 @@ function field_widget (f,g)
     {
         var ec  = 'new-item-field-widget choice';
         var sel = element( 'select', 'id', wid );
+
+        if( multi )
+            sel.setAttribute( 'multiple', 'true' );
+
         widget = div( 'class', ec );
         widget.appendChild( sel );
 
@@ -2983,13 +2989,26 @@ function process_form (id,type)
             continue;
 
         var widget = nodes.snapshotItem( 0 );
-        var value;
+        var value = false;
 
-        if( typeof( f.type ) == "string" )
-            value = widget.textContent;
-        else if( widget.options )
-            if( widget.selectedIndex >= 0 )
+        if( widget.options )
+        {
+            if( widget.selectedOptions.length == 1 )
+            {
                 value = widget.options[widget.selectedIndex].value;
+            }
+            else if( widget.selectedOptions.length > 1 )
+            {
+                value = [];
+                for( const o of widget.selectedOptions )
+                    value.push( o.value );
+            }
+        }
+        else if( typeof( f.type ) == "string" )
+        {
+            value = widget.textContent;
+        }
+
         data[ f.name ] = value;
     }
 
