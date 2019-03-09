@@ -2675,6 +2675,13 @@ function field_widget (f,g)
 
     label.textContent  = ucfirst( f.name ) + ':';
 
+    if( (typeof( etype ) == "string") && (etype == 'runes') )
+    {
+        etype = [];
+        for( const r in rune_glyph )
+            etype.push( r + ':' + rune_glyph[r] + ' ' + r );
+    }
+
     if ( typeof( etype ) == "function" )
     {
         widget = etype( wid );
