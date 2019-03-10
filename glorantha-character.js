@@ -382,7 +382,9 @@ var groups =
                { key: 'srd', type: 'attr', label: 'SR Dex',        val: 0  , noroll: 1, noedit: 1 } ,
                { key: 'spd', type: 'dice', label: 'Spirit Damage', val: '1d3',          noedit: 1 } ,
                { key: 'dam', type: 'dice', label: 'Damage Bonus',  val: 0  ,            noedit: 1 } ,
-               { key: 'mp' , type: 'attr', label: 'Magic Points',  val: 0  , noroll: 1, noedit: 1 } ,
+               { key: 'mp' , type: 'attr', label: 'Magic Points',  val: 0  , noroll: 1, noedit: 1 , deplete: 1 } ,
+               // this next is not drawn, but provides a placeholder so the value can be saved
+               { key: 'mp.cur', type: 'attr', nodraw: 1 } ,
                { key: 'hp' , type: 'attr', label: 'Hitpoints',     val: 0  , noroll: 1, noedit: 1 } ,
                { key: 'hlr', type: 'attr', label: 'Healing Rate',  val: 1  , noroll: 1, noedit: 1 } ,
                { key: 'enc', type: 'attr', label: 'Encumbrance',   val: 9  , noroll: 1, noedit: 1 } ] },
