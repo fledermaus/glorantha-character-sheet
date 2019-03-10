@@ -2698,8 +2698,8 @@ function draw_new_runespell (group, skill)
     if( !sval )
     {
         var iel = make_item( lst, gid, skill, width, 0 );
-        console.log( iel );
         activate_dice( iel, "after" );
+        activate_input_fields( iel, "after" );
     }
 
     var row = xpath( 'dt', lst );
