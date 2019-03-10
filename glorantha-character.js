@@ -3342,7 +3342,7 @@ function add_new_runespell (form_data)
         runes = [ runes ];
 
     if( !key )
-        return "'" + label + "' is not a useful skill name";
+        return "'" + label + "' is not a useful spell name";
 
     if( cost < 0 )
         return "Cost (" + cost + ") cannot be less than zero";
