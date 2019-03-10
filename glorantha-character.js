@@ -111,7 +111,8 @@ const attr_map = { 'stats.con':  [ calc_max_hp, calc_healrate, calc_enc    ] ,
                    'hitpoints.arml.cur':  [ update_hitpoints ] ,
                    'hitpoints.body.cur':  [ update_hitpoints ] ,
                    'hitpoints.legl.cur':  [ update_hitpoints ] ,
-                   'hitpoints.legr.cur':  [ update_hitpoints ] };
+                   'hitpoints.legr.cur':  [ update_hitpoints ] ,
+                   'hitpoints.total.cur': [ update_hitpoints ] };
 
 var extn_template =
 {
@@ -400,7 +401,8 @@ var groups =
                { key: 'body.cur', type: 'attr',  val: 0 } ,
                { key: 'arml.cur', type: 'attr',  val: 0 } ,
                { key: 'legr.cur', type: 'attr',  val: 0 } ,
-               { key: 'legl.cur', type: 'attr',  val: 0 } ] },
+               { key: 'legl.cur', type: 'attr',  val: 0 } ,
+               { key: 'total.cur', type: 'attr', val: 0 } ] },
     { group: 'armour',
       draw: false,
       items: [ { key: 'head',  type: 'attr', val: 0 } ,
@@ -3822,6 +3824,9 @@ function update_hitpoints ()
 
     // apply the running injury total to the current hp:
     if( cur = get_dom_node( 'hitpoints.total.cur' ) )
+        loss += (maxhp - (cur.textContent * 1));
+
+    if( cur = get_dom_node( 'hitpoints.aggregate.cur' ) )
         cur.textContent = '' + (maxhp - loss);
 }
 
@@ -3845,11 +3850,10 @@ function reset_hitpoints (e)
             update_item( cid, hp, true );
     }
 
-    if( max = document.getElementById( 'hitpoints.total.max' ) )
-        if( cur = document.getElementById( 'hitpoints.total.cur' ) )
-            cur.textContent = max.textContent = '' + maxhp;
-    if( cur )
-        update_item( 'hitpoints.total.cur', hp, true );
+    set_dom_node_text( 'hitpoints.total.max', '' + maxhp, false );
+    set_dom_node_text( 'hitpoints.total.cur', '' + maxhp, true  );
+
+    update_hitpoints();
 }
 
 // =========================================================================
