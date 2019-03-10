@@ -2136,11 +2136,16 @@ function update_misc (i)
 
 function _make_stat_value(dl, id, data, bonus, subtype)
 {
+    if( data.nodraw )
+        return;
+
     var dd   = element( 'dd' );
     var cssc = (data.noedit ? 'derived ' : 'editable ') + subtype + ' ';
     var val  = data.val;
     var sval = element( 'span' );
-    var sbtn = element( 'span', 'data-ge-id', id );
+    var sbtn = false;
+    var scur = false;
+    var ssep = false;
     var base = entry_base( data );
     var parry;
 
@@ -2155,7 +2160,6 @@ function _make_stat_value(dl, id, data, bonus, subtype)
                   (( data.cat == 'shield.shield' ) ? '🛡' : '⚔') + '  ';
               parry.style.float = 'left';
               parry.style.width = '2em';
-              sbtn.setAttribute( 'data-action', 'attack' );
           }
         case 'attr':
         case 'stat':
@@ -2182,26 +2186,53 @@ function _make_stat_value(dl, id, data, bonus, subtype)
     sval.setAttribute( 'class', cssc );
     sval.textContent = '' + val;
 
-    if( data.noroll )
+    if( data.deplete )
     {
-        sbtn.textContent = '   ';
+        var cid    = id + '.cur';
+        var cdata  = get_entry( cid );
+        var cclass = 'editable ' + subtype + ' uint';
+        scur = element( 'span', 'id', cid, 'class', cclass );
+        scur.textContent =
+            (cdata && (cdata.val != undefined)) ? cdata.val : data.val;
+        ssep = element( 'span' );
+        ssep.textContent = ' /';
     }
     else
     {
-        sbtn.setAttribute( 'class', 'roll' );
-        if( data.type == 'rune' && rune_glyph[ data.key ] )
-            sbtn.textContent = rune_glyph[ data.key ] + '  ';
-        else
-            sbtn.textContent = "🎲  ";
+        sbtn = element( 'span', 'data-ge-id', id );
+        if( data.type ==  'weapon' )
+            sbtn.setAttribute( 'data-action', 'attack' );
 
-        if( parry )
-            dd.appendChild( parry );
+        if( data.noroll )
+        {
+            sbtn.textContent = '   ';
+        }
+        else
+        {
+            sbtn.setAttribute( 'class', 'roll' );
+            if( data.type == 'rune' && rune_glyph[ data.key ] )
+                sbtn.textContent = rune_glyph[ data.key ] + '  ';
+            else
+                sbtn.textContent = "🎲  ";
+
+            if( parry )
+                dd.appendChild( parry );
+        }
     }
 
-    sbtn.style.float = 'left';
-    sbtn.style.width = '2em';
+    if ( sbtn )
+    {
+        sbtn.style.float = 'left';
+        sbtn.style.width = '2em';
+        dd.appendChild( sbtn );
+    }
 
-    dd.appendChild( sbtn );
+    if( scur )
+    {
+        dd.appendChild( scur );
+        dd.appendChild( ssep );
+    }
+
     dd.appendChild( sval );
     dl.appendChild( dd  );
 }
@@ -2425,6 +2456,9 @@ function add_extra_ui_items (dl, group, width)
 
 function make_item (dl, group, data, width, bonus)
 {
+    if( data.nodraw )
+        return;
+
     var dt = element( 'dt' );
     var label = item_label( data );
     var edit;
