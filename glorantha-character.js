@@ -137,6 +137,10 @@ var extn_template =
                            type: function (i) { return rune_cults( i ) } } ,
                          { name: 'runes', type: 'runes', multi: true     } ,
                          { name: 'cost' , type: 'uint'                   } ] },
+    smagic:  { save:   add_new_spiritspell,
+               draw:   draw_default_input_form,
+               fields: [ { name: 'name' , type: 'text' } ,
+                         { name: 'cost' , type: 'uint' } ] },
     misc:    { save:   add_new_misc,
                draw:   draw_default_input_form,
                fields: [ { name: 'label'     , type: 'text' } ,
@@ -437,6 +441,11 @@ var groups =
       label: 'Rune Magic',
       draw:   true,
       extend: 'rmagic',
+      items: [ ] },
+    { group: 'spirit-magic',
+      label: 'Spirit Magic',
+      draw:   true,
+      extend: 'smagic',
       items: [ ] },
     { group: 'emo',
       label: 'Passions',
@@ -1286,6 +1295,10 @@ function import_item( grp, data )
               draw_new_runespell( group, new_item );
               break;
 
+          case 'spirit-magic':
+              draw_new_spiritspell( group, new_item );
+              break;
+
           case 'rp':
               draw_new_rp( group, new_item );
               break;
@@ -1479,6 +1492,7 @@ function handle_edit_event (e)
       case 'skill':
       case 'attr':
       case 'runespell':
+      case 'spiritspell':
           update_item( id, val );
           break;
 
@@ -1727,6 +1741,9 @@ function do_something (e)
     if( (atype == 'runespell') && (rtype == 'uint') )
         return cast_runespell( rnode, this.getAttribute( 'data-rune' ), id );
 
+    if( (atype == 'spiritspell') && (rtype == 'uint') )
+        return cast_spiritspell( rnode, id );
+
     if( atype == 'skill' && rtype == 'uint' )
     {
         // resolve auto-buff (inspiration) first
@@ -1809,7 +1826,10 @@ function editclass (node)
 function updateclass (node)
 {
     var nc = ' ' + node.getAttribute('class') + ' ';
-    for( const c of ['pinfo', 'skill', 'attr', 'prune', 'hit', 'rp', 'weapon', 'manual-buff', 'runespell', 'misc'] )
+    for( const c of [ 'pinfo'      , 'skill'      , 'attr'     ,
+                      'prune'      , 'hit'        , 'rp'       ,
+                      'weapon'     , 'manual-buff', 'runespell',
+                      'spiritspell', 'misc'       ] )
         if( nc.indexOf( ' ' + c + ' ') >= 0 )
             return c;
 
@@ -2263,6 +2283,26 @@ function make_rp (dl, id, data)
     dl.appendChild( dd  );
 }
 
+function make_spiritspell (dl, id, data)
+{
+    var dd   = element( 'dd' );
+    var val  = data.val;
+    var cssc = 'editable uint spiritspell';
+    var sval = div( 'id', id, 'class', cssc );
+    var sbtn = div( 'class', 'roll', 'data-ge-id', id );
+
+    sbtn.textContent = '🎲';
+    sbtn.style.width = '1.5em';
+
+    sval.textContent = '' + val;
+    sval.style.width = '2em';
+
+    dd.appendChild( sval );
+    dd.appendChild( sbtn );
+    dl.appendChild( dd   );
+}
+
+
 function make_runespell (dl, id, data)
 {
     var dd   = element( 'dd' );
@@ -2511,6 +2551,9 @@ function make_item (dl, group, data, width, bonus)
       case 'runespell':
           make_runespell( dl, id, data );
           break;
+      case 'spiritspell':
+          make_spiritspell( dl, id, data );
+          break;
       case 'stat':
       case 'rune':
       case 'dice':
@@ -2678,6 +2721,39 @@ function draw_new_skill (group, skill)
 
     update_item( sid, '' + score );
 }
+
+// add a spirit spell to the group (or refresh if it's already there)
+function draw_new_spiritspell (group, skill)
+{
+    if( !group || !group.group )
+        return;
+
+    var lst   = document.getElementById( group.group );
+
+    if( !lst )
+        return;
+
+    var gid   = lst.getAttribute( 'id' );
+    var sid   = gid + '.' + skill.key;
+    var width = group_label_col_width( group );
+    var sval  = document.getElementById( sid );
+
+    if( !sval )
+    {
+        var iel = make_item( lst, gid, skill, width, 0 );
+        activate_dice( iel, "after" );
+        activate_input_fields( iel, "after" );
+    }
+
+    var row = xpath( 'dt', lst );
+
+    if( row )
+        for( var i = 0; i < row.snapshotLength; i++ )
+            row.snapshotItem( i ).style.width = width;
+
+    update_item( sid, skill.val );
+}
+
 
 // add a rune spell to the group (or refresh if it's already there)
 function draw_new_runespell (group, skill)
@@ -3322,6 +3398,38 @@ function add_new_emotion (form_data)
 function debug_new_skill (form_data)
 {
     console.log( form_data );
+    return true;
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function add_new_spiritspell (form_data)
+{
+    var group = get_group( form_data.group );
+
+    if( !group )
+        return "Cannot add entry to group " + form_data.group;
+
+    var label = form_data.name;
+    var cost  = form_data.cost * 1;
+    var key   = label_to_key( label );
+
+    if( !key )
+        return "'" + label + "' is not a useful spell name";
+
+    if( cost < 0 )
+        return "Cost (" + cost + ") cannot be less than zero";
+
+    var exists;
+    if( exists = get_entry( group.group + '.' + key ) )
+        return "Spirit Spell " + item_label( exists ) + " already listed";
+
+    var spell = { key:   key   ,
+                  type: 'spiritspell',
+                  label: label ,
+                  val:   cost  };
+
+    group.items.push( spell );
+    draw_new_spiritspell( group, spell );
+
     return true;
 }
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -4224,6 +4332,41 @@ function get_rune_level (r)
     }
 
     return 0;
+}
+
+function cast_spiritspell (panel, id)
+{
+    var spell = get_entry( id );
+    const cid = 'derived.mp.cur';
+
+    if( !spell )
+    {
+        panel.textContent = 'Unknown spirit spell ' + id;
+        return;
+    }
+
+    var cost  = spell.val * 1;
+    var mpcur = (get_entry( cid ) || { val: 0 }).val * 1;
+
+    if( mpcur < cost )
+    {
+        panel.textContent = 'Not enough magic points';
+        return;
+    }
+
+    var pow = (get_entry( 'stats.pow' ) || { val: 0 }).val * 5;
+    var rv  = roll_d100( panel, pow, pow, 'POW × 5 ' + spell.label );
+
+    switch( rv[ 1 ] )
+    {
+      case 'FAIL':
+      case 'FUMBLE':
+          return rv;
+    }
+
+    set_dom_node_text( cid, '' + (mpcur - cost), true );
+
+    return rv;
 }
 
 function cast_runespell (panel, rune, id)
