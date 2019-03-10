@@ -365,6 +365,17 @@ const extra_ui =
                      "id"   , "tick-button",
                      "class", "button exec", false, "🗹 ⋯"] ]
     },
+    missile:
+    {
+        label:   [ "Melee (friend/foe)" ],
+        content: [ [ "span" ,
+                     "id"   , "missile-melee-friends",
+                     "class", "editable uint", false, "0" ],
+                   [ "span", false, " / " ],
+                   [ "span" ,
+                     "id"   , "missile-melee-foes",
+                     "class", "editable uint", false, "1" ] ]
+    }
 };
 
 var standard_skills = {};
@@ -4193,12 +4204,67 @@ function roll_attack (result, raw_skill, skill, prefix, data)
 
     skill = apply_skill_constraints( data, skill );
 
-    var d100    = roll_d100( null, raw_skill, skill, prefix );
-    var rolled  = d100[ 0 ];
-    var outcome = d100[ 1 ];
-    var text    = ( (prefix ? (prefix + " ") : '') +
-                     rolled + "/" + skill + " = "   +
-                     ((outcome == 'FAIL') ? 'MISSED' : outcome) );
+    var friends = 0;
+    var foes    = 1;
+
+    // friend or foe / multi-foe will only be initialsied for missile fire
+    if( data.cat && (split_id( data.cat )[ 0 ] == 'missile') )
+    {
+        var node_fr = get_dom_node( "missile-melee-friends" );
+        var node_fo = get_dom_node( "missile-melee-foes" );
+
+        if( node_fr )
+            friends = (node_fr.textContent || 0) * 1;
+
+        if( node_fo )
+            foes = (node_fo.textContent || 1) * 1;
+    }
+
+    var d100;
+    var rolled;
+    var outcome;
+    var text;
+
+    // close missile support:
+    // technically you could be firing when 0 enemies present,
+    // but the enemy count should rapidly adjust upwards if you do:
+    if( friends > 0 )
+    {
+        var targets  = friends + foes;
+        var ff_skill = maths.round( skill / targets );
+
+        d100 = roll_d100( null, raw_skill, ff_skill, prefix );
+        rolled  = d100[ 0 ];
+        outcome = d100[ 1 ];
+
+        // oops. hit a random target; friend or foe?
+        if( (rolled > ff_skill) && (rolled <= skill) )
+        {
+            var fofd = "1d" + targets;
+            var hit  = roll_ndx( fofd );
+
+            if( hit <= friends )
+                outcome = "HIT Friendly #" + hit;
+            else if ( foes )
+                outcome = "HIT Random Foe #" + ( hit - friends );
+        }
+
+        text = ( (prefix ? (prefix + " ") : '') +
+                 rolled   + "/"   +
+                 ff_skill + "/"   +
+                 skill    + " = " +
+                 ((outcome == 'FAIL') ? 'MISSED' : outcome) );
+    }
+    else
+    {
+        d100    = roll_d100( null, raw_skill, skill, prefix );
+        rolled  = d100[ 0 ];
+        outcome = d100[ 1 ];
+
+        text    = ( (prefix ? (prefix + " ") : '') +
+                    rolled + "/" + skill + " = "   +
+                    ((outcome == 'FAIL') ? 'MISSED' : outcome) );
+    }
 
     switch( outcome )
     {
