@@ -3769,7 +3769,7 @@ function max_hp_for_area (area,maxhp)
 
 function update_hitpoints ()
 {
-    var master = document.getElementById( 'derived.hp' );
+    var master = get_dom_node( 'derived.hp' );
     var maxhp  = master ? (master.textContent * 1) : 0;
     var max;
     var cur;
@@ -3785,7 +3785,7 @@ function update_hitpoints ()
         var delta  = 0;
 
         // figure out what, if any, maxhp change applies to this area
-        if( max = document.getElementById( mid ) )
+        if( max = get_dom_node( mid ) )
         {
             // hitpoints start with an invalid value of '-'
             // which we should ignore:
@@ -3803,7 +3803,7 @@ function update_hitpoints ()
         // adjust upwards or downwards for any max hp change,
         // as well as any current injuries, and
         // keep a running total of injuries
-        if( cur = document.getElementById( cid ) )
+        if( cur = get_dom_node( cid ) )
         {
             var cur_hp = cur.textContent * 1;
 
@@ -3817,11 +3817,11 @@ function update_hitpoints ()
         }
     }
 
-    if( max = document.getElementById( 'hitpoints.total.max' ) )
+    if( max = get_dom_node( 'hitpoints.total.max' ) )
         max.textContent = '' + maxhp;
 
     // apply the running injury total to the current hp:
-    if( cur = document.getElementById( 'hitpoints.total.cur' ) )
+    if( cur = get_dom_node( 'hitpoints.total.cur' ) )
         cur.textContent = '' + (maxhp - loss);
 }
 
