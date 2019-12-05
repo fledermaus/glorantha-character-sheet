@@ -266,7 +266,7 @@ var weapons =
       [ { },
         { 'broadsword'  : { str:  9, dex:  7, dam: '1d8+1' , sr: 2, type: 'SI', base: 10 } ,
           'kopis'       : { str:  9, dex:  9, dam: '1d8+1' , sr: 2, type: 'S' , base: 10 } ,
-          'rapier'      : { str:  7, dex: 13, dam: '1d6+1' , sr: 2, type: 'SI', base: 10 } ,
+          'rapier'      : { str:  7, dex: 13, dam: '1d6+1' , sr: 2, type: 'SI', base:  5 } ,
           'shortsword'  : { str:  0, dex:  0, dam: '1d6+1' , sr: 3, type: 'SI', base: 10 } } ,
         { 'greatsword'  : { str: 11, dex: 13, dam: '2d8'   , sr: 1, type: 'S' , base:  5 } ,
           'romphaia'    : { str: 11, dex:  9, dam: '2d6+2' , sr: 2, type: 'S' , base:  5 } ,
