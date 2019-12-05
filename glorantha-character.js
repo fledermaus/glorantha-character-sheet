@@ -1474,6 +1474,20 @@ function suppress_input (e)
             e.preventDefault();
 }
 
+function update_page_title (s)
+{
+    const txpath = "/html/head/title";
+    var titles = xpath( txpath );
+
+    if( !titles )
+        return;
+
+    if( titles.snapshotLength < 1 )
+        return;
+
+    titles.snapshotItem( 0 ).textContent = s;
+}
+
 function handle_edit_event (e)
 {
     var uc  = updateclass( this );
@@ -1500,6 +1514,8 @@ function handle_edit_event (e)
 
       case 'pinfo':
           storage.set( id, val );
+          if( id == 'personal-info.name' )
+              update_page_title( val );
           break;
 
       case 'skill':
@@ -5074,6 +5090,10 @@ function initialise ()
             if( v = node.getAttribute( 'id' ) )
                 if( (v = storage.get( v )) != null )
                     node.textContent = v;
+
+    var name_node = get_dom_node( 'personal-info.name' );
+    if( name_node )
+        update_page_title( name_node.textContent );
 
     activate_dice();
 
