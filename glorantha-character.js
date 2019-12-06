@@ -1126,8 +1126,8 @@ function toggle_palette (e)
 
 // =========================================================================
 // export character
-const GCSTART = "-----BEGIN GLORANTHA CHARACTER-----\n";
-const GCEND   = "-----END GLORANTHA CHARACTER-----\n";
+const GCSTART = /-----BEGIN GLORANTHA CHARACTER-----[ \n]+/;
+const GCEND   = /-----END GLORANTHA CHARACTER-----[ \n]*/;
 
 function close_io_pane (e)
 {
@@ -1361,7 +1361,7 @@ function import_blob ()
     if( !chunk )
         return;
 
-    var lines = chunk.split( "\n" );
+    var lines = chunk.split( /[ \n]/ );
     lines.pop();
 
     var blob = '';
