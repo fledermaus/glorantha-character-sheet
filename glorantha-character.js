@@ -1126,8 +1126,10 @@ function toggle_palette (e)
 
 // =========================================================================
 // export character
-const GCSTART = /-----BEGIN GLORANTHA CHARACTER-----[ \n]+/;
-const GCEND   = /-----END GLORANTHA CHARACTER-----[ \n]*/;
+const GCSTART_MATCH = /-----BEGIN GLORANTHA CHARACTER-----[ \n]+/;
+const GCEND_MATCH   = /-----END GLORANTHA CHARACTER-----[ \n]*/;
+const GCSTART       = "-----BEGIN GLORANTHA CHARACTER-----\n";
+const GCEND         = "-----END GLORANTHA CHARACTER-----\n";
 
 function close_io_pane (e)
 {
@@ -1353,8 +1355,8 @@ function import_blob ()
     var raw   = node_content( iodata );
     var chunk;
 
-    if( raw = raw.split( GCSTART )[ 1 ] )
-        if( raw = raw.split( GCEND ) )
+    if( raw = raw.split( GCSTART_MATCH )[ 1 ] )
+        if( raw = raw.split( GCEND_MATCH ) )
             if( raw.length >= 2 )
                 chunk = raw[ 0 ];
 
